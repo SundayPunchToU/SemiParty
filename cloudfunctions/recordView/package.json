@@ -1,7 +1,7 @@
 {
   "name": "recordView",
   "version": "1.0.0",
-  "description": "SemiCircle view recorder",
+  "description": "SemiParty view recorder",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

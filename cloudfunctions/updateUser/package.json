@@ -1,7 +1,7 @@
 {
   "name": "updateUser",
   "version": "1.0.0",
-  "description": "SemiCircle user updater",
+  "description": "SemiParty user updater",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

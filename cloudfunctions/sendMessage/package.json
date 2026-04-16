@@ -1,7 +1,7 @@
 {
   "name": "sendMessage",
   "version": "1.0.0",
-  "description": "SemiCircle message sender",
+  "description": "SemiParty message sender",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

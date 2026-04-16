@@ -12,7 +12,7 @@
     <view class="profile-title">{{profile.title}}</view>
     <view class="status-pill" bindtap="handleStatusChange" style="background: {{statusConfig.bg}}; color: {{statusConfig.color}};">
       <text class="status-dot" style="background: {{statusConfig.dot}};"></text>
-      {{profile.jobStatus}}
+      {{statusConfig.label}}
     </view>
   </view>
 

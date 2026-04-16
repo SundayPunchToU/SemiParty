@@ -1,7 +1,7 @@
 {
   "name": "toggleFavorite",
   "version": "1.0.0",
-  "description": "SemiCircle favorite toggler",
+  "description": "SemiParty favorite toggler",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

@@ -39,6 +39,7 @@
       <post-card
         item="{{item}}"
         bind:cardtap="openPostDetail"
+        bind:like="handleLike"
         bind:comment="openComment"
         bind:share="handleShare"
       />

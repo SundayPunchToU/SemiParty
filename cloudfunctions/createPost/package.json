@@ -1,7 +1,7 @@
 {
   "name": "createPost",
   "version": "1.0.0",
-  "description": "SemiCircle post creator",
+  "description": "SemiParty post creator",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

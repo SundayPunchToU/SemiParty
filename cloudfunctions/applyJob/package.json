@@ -1,7 +1,7 @@
 {
   "name": "applyJob",
   "version": "1.0.0",
-  "description": "SemiCircle job application creator",
+  "description": "SemiParty job application creator",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

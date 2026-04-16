@@ -30,8 +30,8 @@ module.exports = {
     { key: "material", label: "材料" }
   ],
   profileStatuses: [
-    { key: "机会", label: "在看机会", dot: "#3bd39c", bg: "#ddf5ee", color: "#157658" },
-    { key: "求职", label: "主动求职", dot: "#2a7fff", bg: "#dce8ff", color: "#165dc6" },
-    { key: "暂停", label: "暂不考虑", dot: "#8f8a81", bg: "#ece7de", color: "#5f5b54" }
+    { key: "open", label: "在看机会", dot: "#3bd39c", bg: "#ddf5ee", color: "#157658" },
+    { key: "active", label: "主动求职", dot: "#2a7fff", bg: "#dce8ff", color: "#165dc6" },
+    { key: "closed", label: "暂不考虑", dot: "#8f8a81", bg: "#ece7de", color: "#5f5b54" }
   ]
 };

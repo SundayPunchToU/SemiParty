@@ -6,7 +6,7 @@ const { deepClone, getNavMetrics } = require("../../utils/util");
 Page({
   data: {
     statusBarHeight: 24,
-    brandName: "芯圈 SemiCircle",
+    brandName: "芯圈 SemiParty",
     tabs: communityTabs,
     activeTab: "hot",
     topics: [],
@@ -25,6 +25,15 @@ Page({
       topics: deepClone(mockData.topicList)
     });
     this.loadPosts(true);
+  },
+
+  onShow() {
+    // 发帖成功返回后刷新列表
+    const app = getApp();
+    if (app.globalData.communityNeedsRefresh) {
+      app.globalData.communityNeedsRefresh = false;
+      this.loadPosts(true);
+    }
   },
 
   applyTopicFilter(list) {
@@ -105,6 +114,15 @@ Page({
 
   handleShare() {
     wx.showToast({ title: "分享能力待接入", icon: "none" });
+  },
+
+  async handleLike(event) {
+    const { id, liked } = event.detail;
+    try {
+      await api.toggleLike("post", id);
+    } catch (e) {
+      wx.showToast({ title: liked ? "点赞失败" : "取消失败", icon: "none" });
+    }
   },
 
   handleCreatePost() {

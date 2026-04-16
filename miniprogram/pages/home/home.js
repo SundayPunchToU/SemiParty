@@ -7,7 +7,7 @@ Page({
   data: {
     statusBarHeight: 24,
     navBarHeight: 44,
-    brandName: "芯圈 SemiCircle",
+    brandName: "芯圈 SemiParty",
     tabs: homeTabs,
     activeTab: "recommend",
     quickNavList: [],

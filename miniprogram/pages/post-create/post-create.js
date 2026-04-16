@@ -44,20 +44,21 @@ Page({
       return;
     }
 
-    await api.createPost({
-      content: this.data.content,
-      topic: this.data.selectedTopic,
-      anonymous: this.data.anonymous
-    });
-
-    wx.showToast({ title: "发布成功", icon: "success" });
-    setTimeout(() => {
-      wx.navigateBack({
-        fail() {
-          wx.switchTab({ url: "/pages/community/community" });
-        }
+    try {
+      await api.createPost({
+        content: this.data.content,
+        topic: this.data.selectedTopic,
+        anonymous: this.data.anonymous
       });
-    }, 300);
+
+      getApp().globalData.communityNeedsRefresh = true;
+      wx.showToast({ title: "发布成功", icon: "success" });
+      setTimeout(() => {
+        wx.navigateBack({ fail() { wx.switchTab({ url: "/pages/community/community" }); } });
+      }, 300);
+    } catch (e) {
+      wx.showToast({ title: "发布失败，请重试", icon: "none" });
+    }
   },
 
   goBack() {

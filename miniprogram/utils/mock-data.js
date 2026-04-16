@@ -461,7 +461,7 @@ const userProfile = {
   avatarText: "陈",
   title: "工艺整合工程师 · 5 年经验",
   experience: "5 年经验",
-  jobStatus: "在看机会",
+  jobStatus: "open",
   stats: { posts: 23, likes: 156, following: 89 }
 };
 

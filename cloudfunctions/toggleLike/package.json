@@ -1,7 +1,7 @@
 {
   "name": "toggleLike",
   "version": "1.0.0",
-  "description": "SemiCircle like toggler",
+  "description": "SemiParty like toggler",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

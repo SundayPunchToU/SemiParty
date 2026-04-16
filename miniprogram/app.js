@@ -19,7 +19,7 @@ App({
       (capsule.top - statusBarHeight) * 2 + capsule.height;
 
     this.globalData = {
-      brandName: "芯圈 SemiCircle",
+      brandName: "芯圈 SemiParty",
       cloudReady: false,
       cloudEnvId: "",
       openid: "",

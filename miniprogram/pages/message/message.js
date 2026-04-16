@@ -5,7 +5,7 @@ const { getNavMetrics } = require("../../utils/util");
 Page({
   data: {
     statusBarHeight: 24,
-    brandName: "芯圈 SemiCircle",
+    brandName: "芯圈 SemiParty",
     tabs: messageTabs,
     activeTab: "private",
     chatList: []

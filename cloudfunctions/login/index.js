@@ -13,7 +13,7 @@ function buildDefaultUser(openid) {
     avatarText: "陈",
     avatarUrl: "",
     title: "工艺整合工程师",
-    company: "SemiCircle",
+    company: "SemiParty",
     experience: "5年",
     jobStatus: "open",
     avatarBg: "#DCE8FF",

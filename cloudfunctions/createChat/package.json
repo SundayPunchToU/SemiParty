@@ -1,7 +1,7 @@
 {
   "name": "createChat",
   "version": "1.0.0",
-  "description": "SemiCircle chat creator",
+  "description": "SemiParty chat creator",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

@@ -1,7 +1,7 @@
 {
   "name": "initData",
   "version": "1.0.0",
-  "description": "SemiCircle seed data initializer",
+  "description": "SemiParty seed data initializer",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

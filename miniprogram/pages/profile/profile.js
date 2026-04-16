@@ -24,7 +24,7 @@ const menuGroups = [
 Page({
   data: {
     statusBarHeight: 24,
-    brandName: "芯圈 SemiCircle",
+    brandName: "芯圈 SemiParty",
     profile: null,
     statusConfig: null,
     menuGroups
@@ -39,9 +39,12 @@ Page({
     });
   },
 
-  getStatusConfig(status) {
+  getStatusConfig(statusKey) {
+    // 兼容旧数据：如果传入的是中文 label 而非 key，也能匹配
     return (
-      profileStatuses.find((item) => item.label === status) || profileStatuses[0]
+      profileStatuses.find((item) => item.key === statusKey) ||
+      profileStatuses.find((item) => item.label === statusKey) ||
+      profileStatuses[0]
     );
   },
 
@@ -50,9 +53,23 @@ Page({
       itemList: profileStatuses.map((item) => item.label),
       success: ({ tapIndex }) => {
         const selected = profileStatuses[tapIndex];
+        const prevKey = this.data.profile.jobStatus;
+        const prevConfig = this.data.statusConfig;
+
+        // 乐观更新 UI
         this.setData({
-          "profile.jobStatus": selected.label,
+          "profile.jobStatus": selected.key,
           statusConfig: selected
+        });
+
+        // 持久化到云端
+        api.updateUser("jobStatus", selected.key).catch(() => {
+          // 回滚
+          this.setData({
+            "profile.jobStatus": prevKey,
+            statusConfig: prevConfig
+          });
+          wx.showToast({ title: "状态保存失败，请重试", icon: "none" });
         });
       }
     });

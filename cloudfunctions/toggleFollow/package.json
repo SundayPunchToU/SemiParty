@@ -1,7 +1,7 @@
 {
   "name": "toggleFollow",
   "version": "1.0.0",
-  "description": "SemiCircle follow toggler",
+  "description": "SemiParty follow toggler",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

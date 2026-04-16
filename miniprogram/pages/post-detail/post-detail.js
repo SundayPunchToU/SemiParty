@@ -5,7 +5,9 @@ Page({
   data: {
     statusBarHeight: 24,
     post: null,
-    publishTime: ""
+    publishTime: "",
+    focusComment: false,
+    comments: []
   },
 
   async onLoad(options) {
@@ -13,8 +15,19 @@ Page({
     this.setData({
       ...getNavMetrics(),
       post,
-      publishTime: formatRelative(post.createdAt)
+      publishTime: formatRelative(post.createdAt),
+      focusComment: options.focus === "comment"
     });
+    this.loadComments(options.id);
+  },
+
+  async loadComments(postId) {
+    try {
+      const result = await api.getComments("post", postId, 1);
+      this.setData({ comments: result.data || [] });
+    } catch (e) {
+      // 评论加载失败静默处理，不影响帖子主体展示
+    }
   },
 
   goBack() {

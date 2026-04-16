@@ -1,4 +1,4 @@
-# SemiCircle Cloud Backend Setup
+# SemiParty Cloud Backend Setup
 
 ## What Changed
 
