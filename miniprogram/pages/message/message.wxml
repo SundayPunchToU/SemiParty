@@ -1,0 +1,29 @@
+<view class="page-shell">
+  <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="custom-topbar">
+      <view class="brand">{{brandName}}</view>
+      <view class="top-pill">Tab 3 · 消息</view>
+    </view>
+  </view>
+
+  <view class="page-title">消息</view>
+
+  <view class="message-tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="message-tab {{activeTab === item.key ? 'is-active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="handleTabChange"
+    >
+      {{item.label}}
+    </view>
+  </view>
+
+  <view class="chat-stream">
+    <block wx:for="{{chatList}}" wx:key="id">
+      <chat-item item="{{item}}" bind:itemtap="openChat" />
+      <view wx:if="{{index !== chatList.length - 1}}" class="divider"></view>
+    </block>
+  </view>
+</view>

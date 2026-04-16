@@ -1,0 +1,11 @@
+<view class="search-bar" bindtap="handleTap">
+  <text class="search-icon">⌕</text>
+  <input
+    class="search-input"
+    value="{{value}}"
+    placeholder="{{placeholder}}"
+    placeholder-class="search-placeholder"
+    disabled="{{disabled}}"
+    bindinput="handleInput"
+  />
+</view>

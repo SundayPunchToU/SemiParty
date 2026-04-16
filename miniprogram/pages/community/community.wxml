@@ -1,0 +1,51 @@
+<view class="page-shell community-shell">
+  <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="custom-topbar">
+      <view class="brand">{{brandName}}</view>
+      <view class="top-pill">Tab 2 · 广场</view>
+    </view>
+  </view>
+
+  <view class="page-title">广场</view>
+
+  <view class="category-row">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="category-chip {{activeTab === item.key ? 'is-active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="handleTabChange"
+    >
+      {{item.label}}
+    </view>
+  </view>
+
+  <scroll-view class="topic-scroll" scroll-x="true" enable-flex="true" show-scrollbar="{{false}}">
+    <view class="topic-row">
+      <view
+        wx:for="{{topics}}"
+        wx:key="id"
+        class="topic-pill tag tag-{{item.type}} {{activeTopic === item.text ? 'is-active' : ''}}"
+        data-text="{{item.text}}"
+        bindtap="handleTopicTap"
+      >
+        # {{item.text}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="post-stream">
+    <block wx:for="{{posts}}" wx:key="id">
+      <post-card
+        item="{{item}}"
+        bind:cardtap="openPostDetail"
+        bind:comment="openComment"
+        bind:share="handleShare"
+      />
+      <view wx:if="{{index !== posts.length - 1}}" class="divider"></view>
+    </block>
+  </view>
+
+  <view class="fab" bindtap="handleCreatePost">+</view>
+  <view class="list-footer">{{hasMore ? (loadingMore ? '加载中…' : '') : '没有更多帖子了'}}</view>
+</view>

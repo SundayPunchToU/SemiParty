@@ -1,0 +1,15 @@
+<view class="chat-item" bindtap="handleTap">
+  <view class="avatar-{{item.avatarShape}} chat-avatar" style="background: {{item.avatarBg}}; color: {{item.avatarColor}};">
+    {{item.avatarText}}
+  </view>
+  <view class="chat-body">
+    <view class="chat-top">
+      <text class="chat-name">{{item.name}}</text>
+      <text class="chat-time">{{item.time}}</text>
+    </view>
+    <view class="chat-bottom">
+      <text class="chat-message">{{item.lastMessage}}</text>
+      <view wx:if="{{item.unread}}" class="chat-badge">{{item.unread}}</view>
+    </view>
+  </view>
+</view>

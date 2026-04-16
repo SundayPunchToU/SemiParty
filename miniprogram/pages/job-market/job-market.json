@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "search-bar": "/components/search-bar/index",
+    "job-card": "/components/job-card/index",
+    "talent-card": "/components/talent-card/index"
+  }
+}

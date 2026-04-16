@@ -1,0 +1,45 @@
+<view class="inner-shell detail-shell">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="detail-nav">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="ghost-btn" data-name="分享" bindtap="handleAction">分享</view>
+    </view>
+  </view>
+
+  <view wx:if="{{post}}" class="author-card panel">
+    <view class="author-head">
+      <view class="avatar-circle author-avatar" style="background: {{post.author.avatarBg}}; color: {{post.author.avatarColor}};">
+        {{post.author.avatarText}}
+      </view>
+      <view class="author-info">
+        <view class="author-name">{{post.author.name}}</view>
+        <view class="author-role">{{post.author.title}}</view>
+      </view>
+      <view class="follow-btn" data-name="关注" bindtap="handleAction">关注</view>
+    </view>
+
+    <view class="post-detail-content">{{post.content}}</view>
+    <text class="tag tag-{{post.topic.type}}">{{post.topic.text}}</text>
+    <view class="detail-meta-row">{{publishTime}} · {{post.likes}} 赞 · {{post.comments}} 评论</view>
+  </view>
+
+  <view class="comment-section">
+    <view class="section-title">评论</view>
+    <view wx:if="{{post.commentsList.length === 0}}" class="empty-note">还没有评论，抢个沙发。</view>
+    <view wx:for="{{post.commentsList}}" wx:key="id" class="comment-item">
+      <view class="avatar-circle comment-avatar" style="background: {{item.avatarBg}}; color: {{item.avatarColor}};">
+        {{item.avatarText}}
+      </view>
+      <view class="comment-body">
+        <view class="comment-name">{{item.user}}</view>
+        <view class="comment-content">{{item.content}}</view>
+        <view class="comment-meta">{{item.time}} · {{item.likes}} 赞</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="composer-bar">
+    <view class="composer-input">写下你的看法…</view>
+    <view class="composer-send" data-name="发送" bindtap="handleAction">发送</view>
+  </view>
+</view>

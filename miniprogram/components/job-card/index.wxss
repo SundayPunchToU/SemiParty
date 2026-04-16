@@ -1,0 +1,64 @@
+.job-card {
+  padding: 24rpx;
+  margin-bottom: 18rpx;
+}
+
+.job-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18rpx;
+}
+
+.job-title {
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.job-meta {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.job-salary {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.job-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.job-tag {
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-secondary);
+  font-size: 22rpx;
+}
+
+.job-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 22rpx;
+}
+
+.job-bonus {
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.job-apply {
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  background: rgba(42, 127, 255, 0.16);
+  color: #8cc2ff;
+  font-size: 24rpx;
+  font-weight: 600;
+}

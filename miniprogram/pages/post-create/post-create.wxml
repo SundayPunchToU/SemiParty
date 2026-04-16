@@ -1,0 +1,49 @@
+<view class="inner-shell">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="create-nav">
+      <view class="nav-link" bindtap="goBack">取消</view>
+      <view class="inner-title">发布帖子</view>
+      <view class="publish-btn" bindtap="handlePublish">发布</view>
+    </view>
+  </view>
+
+  <textarea
+    class="editor"
+    maxlength="1000"
+    placeholder="分享你的想法、面经或行业见闻…"
+    placeholder-class="editor-placeholder"
+    value="{{content}}"
+    bindinput="handleInput"
+  ></textarea>
+
+  <view class="editor-section">
+    <view class="editor-label">选择话题</view>
+    <view class="topic-grid">
+      <view
+        wx:for="{{topics}}"
+        wx:key="id"
+        class="topic-choice {{selectedTopic === item.text ? 'is-active' : ''}}"
+        data-text="{{item.text}}"
+        bindtap="handleTopicSelect"
+      >
+        # {{item.text}}
+      </view>
+    </view>
+  </view>
+
+  <view class="editor-section switch-row">
+    <view>
+      <view class="editor-label">匿名发布</view>
+      <view class="editor-tip">开启后将隐藏你的个人身份</view>
+    </view>
+    <switch color="#2a7fff" checked="{{anonymous}}" bindchange="handleAnonymousChange"></switch>
+  </view>
+
+  <view class="editor-section">
+    <view class="editor-label">图片</view>
+    <view class="image-grid">
+      <view wx:for="{{images}}" wx:key="*this" class="image-cell">图</view>
+      <view class="image-add" bindtap="handleAddImage">+</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,14 @@
+<view class="quick-nav-grid">
+  <view
+    wx:for="{{list}}"
+    wx:key="id"
+    class="quick-nav-item"
+    data-index="{{index}}"
+    bindtap="handleTap"
+  >
+    <view class="quick-nav-icon" style="background: {{item.bg}}; color: {{item.color}};">
+      {{item.icon}}
+    </view>
+    <text class="quick-nav-label">{{item.label}}</text>
+  </view>
+</view>

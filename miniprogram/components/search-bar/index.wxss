@@ -1,0 +1,23 @@
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 20rpx;
+  border-radius: 12rpx;
+  background: var(--color-bg-input);
+}
+
+.search-icon {
+  color: var(--color-text-tertiary);
+  font-size: 28rpx;
+}
+
+.search-input {
+  flex: 1;
+  color: var(--color-text-primary);
+  font-size: 24rpx;
+}
+
+.search-placeholder {
+  color: var(--color-text-tertiary);
+}

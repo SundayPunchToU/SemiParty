@@ -1,0 +1,19 @@
+<view class="talent-card panel">
+  <view class="talent-head">
+    <view class="avatar-circle talent-avatar" style="background: {{item.avatarBg}}; color: {{item.avatarColor}};">
+      {{item.avatarText}}
+    </view>
+    <view class="talent-main">
+      <view class="talent-name">{{item.name}} · {{item.education}}</view>
+      <view class="talent-school">{{item.school}}</view>
+      <view class="talent-desc">{{item.years}} 年经验 · {{item.currentRole}} · 期望 {{item.targetRole}}</view>
+    </view>
+  </view>
+  <view class="talent-tags">
+    <text wx:for="{{item.tags}}" wx:key="*this" class="job-tag">{{item}}</text>
+    <text class="tag {{statusClass}}">{{item.status}}</text>
+  </view>
+  <view class="talent-footer">
+    <view class="talent-btn" bindtap="handleContact">主动沟通</view>
+  </view>
+</view>

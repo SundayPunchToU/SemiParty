@@ -1,0 +1,57 @@
+<view class="page-shell">
+  <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="custom-topbar">
+      <view class="brand">{{brandName}}</view>
+      <view class="top-pill">Tab 1 · 资讯</view>
+    </view>
+  </view>
+
+  <view class="page-title">资讯</view>
+  <view class="page-subtitle">半导体行业一站式信息平台</view>
+
+  <search-bar
+    placeholder="搜索行业新闻、技术文章、公司动态…"
+    disabled="{{true}}"
+    bind:searchtap="handleSearch"
+  />
+
+  <view class="job-banner" bindtap="openJobMarket">
+    <view class="job-banner-icon">👥</view>
+    <view class="job-banner-body">
+      <view class="job-banner-title">{{banner.title}}</view>
+      <view class="job-banner-subtitle">{{banner.subtitle}}</view>
+    </view>
+  </view>
+
+  <view class="quick-nav-wrap">
+    <quick-nav list="{{quickNavList}}" bind:select="handleQuickNav" />
+  </view>
+
+  <scroll-view class="tab-scroll" scroll-x="true" enable-flex="true" show-scrollbar="{{false}}">
+    <view class="tab-row">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="tab-chip {{activeTab === item.key ? 'is-active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="handleTabChange"
+      >
+        {{item.label}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="section-header">
+    <view class="section-title">今日热点</view>
+    <view class="section-link">更多 ›</view>
+  </view>
+
+  <view class="news-stream">
+    <block wx:for="{{newsList}}" wx:key="id">
+      <news-card item="{{item}}" bind:cardtap="openArticle" />
+      <view wx:if="{{index !== newsList.length - 1}}" class="divider"></view>
+    </block>
+  </view>
+
+  <view class="list-footer">{{hasMore ? (loadingMore ? '加载中…' : '') : '没有更多内容了'}}</view>
+</view>

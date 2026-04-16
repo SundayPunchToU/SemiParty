@@ -1,0 +1,55 @@
+<view class="inner-shell">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="inner-nav">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="inner-title-box">
+        <view class="inner-title">人才市场</view>
+        <view class="inner-subtitle">求职 · 招聘双向通道</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="segment">
+    <view
+      wx:for="{{modes}}"
+      wx:key="key"
+      class="segment-item {{mode === item.key ? 'is-active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="handleModeChange"
+    >
+      {{item.label}}
+    </view>
+  </view>
+
+  <search-bar
+    placeholder="{{mode === 'job' ? '职位名称、公司、关键词' : '搜索人才：技能、经验、学校'}}"
+    value="{{keyword}}"
+    bind:change="handleSearchChange"
+  />
+
+  <view wx:if="{{mode === 'job'}}">
+    <scroll-view class="filter-scroll" scroll-x="true" enable-flex="true" show-scrollbar="{{false}}">
+      <view class="filter-row">
+        <view
+          wx:for="{{filters}}"
+          wx:key="key"
+          class="filter-chip {{activeFilter === item.key ? 'is-active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="handleFilterChange"
+        >
+          {{item.label}}
+        </view>
+      </view>
+    </scroll-view>
+
+    <view class="market-list">
+      <job-card wx:for="{{jobList}}" wx:key="id" item="{{item}}" bind:apply="handleApply" />
+    </view>
+  </view>
+
+  <view wx:else>
+    <view class="market-list">
+      <talent-card wx:for="{{talentList}}" wx:key="id" item="{{item}}" bind:contact="handleContact" />
+    </view>
+  </view>
+</view>

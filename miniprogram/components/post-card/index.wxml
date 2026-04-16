@@ -1,0 +1,21 @@
+<view class="post-card" bindtap="handleTap">
+  <view class="post-head">
+    <view class="avatar-circle post-avatar" style="background: {{item.author.avatarBg}}; color: {{item.author.avatarColor}};">
+      {{item.author.avatarText}}
+    </view>
+    <view class="post-author">
+      <view class="post-name">{{item.author.name}}</view>
+      <view class="post-role">{{item.author.title}}</view>
+    </view>
+  </view>
+
+  <view class="post-content">{{item.content}}</view>
+  <text class="tag tag-{{item.topic.type}}">{{item.topic.text}}</text>
+
+  <view class="post-actions">
+    <view class="post-action {{liked ? 'is-active' : ''}}" catchtap="handleLike">♡ {{likeCount}}</view>
+    <view class="post-action" catchtap="handleComment">◻ {{item.comments}}</view>
+    <view class="post-action" catchtap="handleShare">↗ 分享</view>
+  </view>
+  <view class="post-time">{{relativeTime}}</view>
+</view>

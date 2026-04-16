@@ -1,0 +1,26 @@
+<view class="inner-shell detail-shell">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="detail-nav">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="nav-actions">
+        <view class="ghost-btn" data-name="分享" bindtap="handleAction">分享</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{article}}">
+    <view class="detail-tags">
+      <text wx:for="{{article.tags}}" wx:key="text" class="tag tag-{{item.type}}">{{item.text}}</text>
+    </view>
+    <view class="detail-title">{{article.title}}</view>
+    <view class="detail-meta">{{article.source}} · {{publishTime}} · {{viewCount}} 阅读</view>
+    <rich-text class="article-body" nodes="{{article.content}}"></rich-text>
+  </view>
+
+  <view class="action-bar">
+    <view class="action-item" data-name="点赞" bindtap="handleAction">点赞</view>
+    <view class="action-item" data-name="收藏" bindtap="handleAction">收藏</view>
+    <view class="action-item" data-name="评论" bindtap="handleAction">评论</view>
+    <view class="action-item" data-name="转发" bindtap="handleAction">转发</view>
+  </view>
+</view>

@@ -1,0 +1,54 @@
+<view class="page-shell">
+  <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="custom-topbar">
+      <view class="brand">{{brandName}}</view>
+      <view class="top-pill">Tab 4 · 我的</view>
+    </view>
+  </view>
+
+  <view wx:if="{{profile}}" class="profile-card">
+    <view class="avatar-circle profile-avatar">{{profile.avatarText}}</view>
+    <view class="profile-name">{{profile.name}}</view>
+    <view class="profile-title">{{profile.title}}</view>
+    <view class="status-pill" bindtap="handleStatusChange" style="background: {{statusConfig.bg}}; color: {{statusConfig.color}};">
+      <text class="status-dot" style="background: {{statusConfig.dot}};"></text>
+      {{profile.jobStatus}}
+    </view>
+  </view>
+
+  <view wx:if="{{profile}}" class="stat-grid">
+    <view class="stat-card">
+      <view class="stat-number">{{profile.stats.posts}}</view>
+      <view class="stat-label">发帖</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-number">{{profile.stats.likes}}</view>
+      <view class="stat-label">获赞</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-number">{{profile.stats.following}}</view>
+      <view class="stat-label">关注</view>
+    </view>
+  </view>
+
+  <view wx:for="{{menuGroups}}" wx:key="title" class="menu-group">
+    <view class="menu-title">{{item.title}}</view>
+    <view class="menu-list">
+      <view
+        wx:for="{{item.items}}"
+        wx:for-item="menu"
+        wx:key="id"
+        class="menu-item"
+        data-name="{{menu.name}}"
+        bindtap="handleMenuTap"
+      >
+        <view class="menu-icon" style="background: {{menu.bg}}; color: {{menu.color}};">{{menu.icon}}</view>
+        <view class="menu-content">
+          <view class="menu-name">{{menu.name}}</view>
+          <view class="menu-desc">{{menu.desc}}</view>
+        </view>
+        <view class="menu-arrow">›</view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,85 @@
+.top-safe {
+  margin-bottom: 8rpx;
+}
+
+.page-title {
+  font-size: 52rpx;
+  margin-bottom: 8rpx;
+}
+
+.job-banner {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 16rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: linear-gradient(135deg, #dce8ff 0%, #e8fbf4 100%);
+}
+
+.job-banner-icon {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 12rpx;
+  background: #1f6fcf;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+}
+
+.job-banner-body {
+  flex: 1;
+  color: #1457a7;
+}
+
+.job-banner-title {
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.job-banner-subtitle {
+  margin-top: 2rpx;
+  font-size: 20rpx;
+  color: #2978c9;
+}
+
+.quick-nav-wrap {
+  margin-top: 16rpx;
+}
+
+.tab-scroll {
+  margin: 10rpx 0 12rpx;
+  white-space: nowrap;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.tab-row {
+  display: flex;
+  gap: 0;
+}
+
+.tab-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 24rpx;
+  border: none;
+  border-radius: 0;
+  border-bottom: 4rpx solid transparent;
+  color: var(--color-text-secondary);
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+.tab-chip.is-active {
+  background: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  border-bottom-color: var(--color-primary);
+}
+
+.news-stream {
+  margin-top: 2rpx;
+}

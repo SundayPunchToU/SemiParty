@@ -1,0 +1,16 @@
+<view class="job-card panel" bindtap="handleTap">
+  <view class="job-top">
+    <view>
+      <view class="job-title">{{item.title}}</view>
+      <view class="job-meta">{{item.company}} · {{item.city}} · {{item.experience}}</view>
+    </view>
+    <view class="job-salary">{{item.salary}}</view>
+  </view>
+  <view class="job-tags">
+    <text wx:for="{{item.tags}}" wx:key="*this" class="job-tag">{{item}}</text>
+  </view>
+  <view class="job-bottom">
+    <text class="job-bonus">{{item.bonus}}</text>
+    <view class="job-apply" catchtap="handleApply">投递简历</view>
+  </view>
+</view>

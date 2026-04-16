@@ -1,0 +1,153 @@
+.inner-top {
+  margin-bottom: 8rpx;
+}
+
+.detail-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+}
+
+.ghost-btn {
+  padding: 12rpx 20rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 24rpx;
+}
+
+.author-card {
+  padding: 24rpx;
+  margin-top: 20rpx;
+}
+
+.author-head {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.author-avatar {
+  width: 82rpx;
+  height: 82rpx;
+  font-size: 32rpx;
+}
+
+.author-info {
+  flex: 1;
+}
+
+.author-name {
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.author-role {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.follow-btn {
+  padding: 10rpx 22rpx;
+  border-radius: 999rpx;
+  background: rgba(42, 127, 255, 0.16);
+  color: #91c4ff;
+  font-size: 24rpx;
+}
+
+.post-detail-content {
+  margin: 22rpx 0 18rpx;
+  font-size: 34rpx;
+  line-height: 1.62;
+}
+
+.detail-meta-row {
+  margin-top: 18rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.comment-section {
+  margin-top: 34rpx;
+}
+
+.comment-item {
+  display: flex;
+  gap: 16rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+.comment-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  font-size: 26rpx;
+}
+
+.comment-body {
+  flex: 1;
+}
+
+.comment-name {
+  font-size: 28rpx;
+  font-weight: 700;
+}
+
+.comment-content {
+  margin-top: 8rpx;
+  font-size: 28rpx;
+  color: var(--color-text-primary);
+}
+
+.comment-meta {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+}
+
+.composer-bar {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(env(safe-area-inset-bottom) + 20rpx);
+  display: flex;
+  gap: 12rpx;
+  padding: 14rpx;
+  border-radius: 24rpx;
+  background: rgba(42, 41, 38, 0.96);
+}
+
+.composer-input {
+  flex: 1;
+  height: 68rpx;
+  padding: 0 22rpx;
+  border-radius: 18rpx;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+}
+
+.composer-send {
+  width: 116rpx;
+  height: 68rpx;
+  border-radius: 18rpx;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  font-weight: 600;
+}

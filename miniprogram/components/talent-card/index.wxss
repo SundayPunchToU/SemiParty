@@ -1,0 +1,53 @@
+.talent-card {
+  padding: 24rpx;
+  margin-bottom: 18rpx;
+}
+
+.talent-head {
+  display: flex;
+  gap: 18rpx;
+}
+
+.talent-avatar {
+  width: 74rpx;
+  height: 74rpx;
+  font-size: 30rpx;
+}
+
+.talent-main {
+  flex: 1;
+}
+
+.talent-name {
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.talent-school,
+.talent-desc {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.talent-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+
+.talent-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 22rpx;
+}
+
+.talent-btn {
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 600;
+}
