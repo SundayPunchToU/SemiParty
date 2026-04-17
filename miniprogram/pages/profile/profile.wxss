@@ -2,26 +2,27 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20rpx 0 24rpx;
+  padding: 24rpx 0 28rpx;
 }
 
 .profile-avatar {
-  width: 100rpx;
-  height: 100rpx;
-  background: #dce8ff;
-  color: #165dc6;
+  width: 96rpx;
+  height: 96rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-text);
   font-size: 36rpx;
+  border-radius: 20rpx;
 }
 
 .profile-name {
   margin-top: 12rpx;
   font-size: 34rpx;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .profile-title {
-  margin-top: 4rpx;
-  font-size: 24rpx;
+  margin-top: 6rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
@@ -29,10 +30,10 @@
   display: flex;
   align-items: center;
   gap: 10rpx;
-  margin-top: 10rpx;
-  padding: 4rpx 16rpx;
+  margin-top: 12rpx;
+  padding: 6rpx 16rpx;
   border-radius: 999rpx;
-  font-size: 22rpx;
+  font-size: var(--font-sm);
   font-weight: 600;
 }
 

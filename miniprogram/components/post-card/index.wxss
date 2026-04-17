@@ -1,17 +1,21 @@
 .post-card {
-  padding: 16rpx 0;
+  padding: var(--card-pad);
+  margin-bottom: 16rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .post-head {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin-bottom: 10rpx;
+  margin-bottom: 14rpx;
 }
 
 .post-avatar {
-  width: 60rpx;
-  height: 60rpx;
+  width: 56rpx;
+  height: 56rpx;
   font-size: 22rpx;
   border-radius: 12rpx;
 }
@@ -22,41 +26,42 @@
 }
 
 .post-name {
-  font-size: 26rpx;
+  font-size: var(--font-base);
   font-weight: 700;
 }
 
 .post-role {
   margin-top: 2rpx;
-  font-size: 20rpx;
-  color: var(--color-text-secondary);
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
 }
 
 .post-content {
-  margin-bottom: 10rpx;
-  font-size: 26rpx;
-  line-height: 1.5;
+  margin-bottom: 14rpx;
+  font-size: var(--font-base);
+  line-height: 1.6;
   color: var(--color-text-primary);
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .post-actions {
   display: flex;
-  gap: 32rpx;
-  margin-top: 8rpx;
-  font-size: 22rpx;
-  color: var(--color-text-secondary);
+  justify-content: flex-end;
+  gap: 28rpx;
+  margin-top: 14rpx;
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
 }
 
 .post-action.is-active {
-  color: var(--color-primary);
+  color: var(--color-like-active);
 }
 
 .post-time {
-  margin-top: 4rpx;
-  font-size: 20rpx;
-  color: var(--color-text-tertiary);
+  margin-top: 10rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-dim);
 }

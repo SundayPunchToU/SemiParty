@@ -1,9 +1,9 @@
 .top-safe {
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
 }
 
 .page-title {
-  font-size: 52rpx;
+  font-size: var(--font-xxl);
   margin-bottom: 8rpx;
 }
 
@@ -11,48 +11,50 @@
   display: flex;
   align-items: center;
   gap: 16rpx;
-  margin-top: 16rpx;
-  padding: 16rpx 20rpx;
-  border-radius: 12rpx;
-  background: linear-gradient(135deg, #dce8ff 0%, #e8fbf4 100%);
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-left: 3rpx solid var(--color-primary);
 }
 
 .job-banner-icon {
-  width: 60rpx;
-  height: 60rpx;
-  border-radius: 12rpx;
-  background: #1f6fcf;
-  color: #fff;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-text);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30rpx;
+  font-size: 28rpx;
 }
 
 .job-banner-body {
   flex: 1;
-  color: #1457a7;
+  color: var(--color-text-primary);
 }
 
 .job-banner-title {
-  font-size: 26rpx;
+  font-size: var(--font-md);
   font-weight: 700;
 }
 
 .job-banner-subtitle {
-  margin-top: 2rpx;
-  font-size: 20rpx;
-  color: #2978c9;
+  margin-top: 4rpx;
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
 }
 
 .quick-nav-wrap {
-  margin-top: 16rpx;
+  margin-top: 20rpx;
 }
 
 .tab-scroll {
-  margin: 10rpx 0 12rpx;
+  margin: 16rpx 0 16rpx;
   white-space: nowrap;
-  border-bottom: 1rpx solid var(--color-border);
+  border-bottom: 1rpx solid var(--color-divider);
 }
 
 .tab-row {
@@ -64,22 +66,22 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12rpx 24rpx;
+  padding: 14rpx 28rpx;
   border: none;
   border-radius: 0;
-  border-bottom: 4rpx solid transparent;
-  color: var(--color-text-secondary);
-  font-size: 26rpx;
+  border-bottom: 3rpx solid transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-base);
   font-weight: 500;
 }
 
 .tab-chip.is-active {
   background: none;
-  color: var(--color-primary);
-  font-weight: 600;
+  color: var(--color-text-primary);
+  font-weight: 700;
   border-bottom-color: var(--color-primary);
 }
 
 .news-stream {
-  margin-top: 2rpx;
+  margin-top: 8rpx;
 }

@@ -9,7 +9,8 @@ Page({
     topics: [],
     selectedTopic: "",
     anonymous: false,
-    images: []
+    images: [],
+    canPublish: false
   },
 
   onLoad() {
@@ -21,7 +22,11 @@ Page({
   },
 
   handleInput(event) {
-    this.setData({ content: event.detail.value });
+    const content = event.detail.value;
+    this.setData({
+      content,
+      canPublish: !!content.trim()
+    });
   },
 
   handleTopicSelect(event) {

@@ -1,17 +1,17 @@
 .message-tabs {
   display: flex;
   gap: 0;
-  margin: 10rpx 0 10rpx;
+  margin: 16rpx 0;
   border-bottom: 1rpx solid var(--color-divider);
 }
 
 .message-tab {
-  padding: 12rpx 24rpx;
+  padding: 14rpx 24rpx;
   border-radius: 0;
   border: 0;
-  border-bottom: 4rpx solid transparent;
-  color: var(--color-text-secondary);
-  font-size: 26rpx;
+  border-bottom: 3rpx solid transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-base);
   font-weight: 500;
 }
 
@@ -21,7 +21,7 @@
 
 .message-tab.is-active {
   background: none;
-  color: var(--color-primary);
-  font-weight: 600;
+  color: var(--color-text-primary);
+  font-weight: 700;
   border-bottom-color: var(--color-primary);
 }

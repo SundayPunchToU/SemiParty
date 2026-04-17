@@ -47,5 +47,5 @@
     </view>
   </view>
 
-  <view class="publish-bar" bindtap="handlePublish">发布</view>
+  <view class="publish-bar {{canPublish ? '' : 'is-disabled'}}" bindtap="handlePublish">发布</view>
 </view>
