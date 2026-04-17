@@ -47,11 +47,56 @@ function normalizeMockState(rawState) {
   };
 }
 
+function getStatusBarHeight() {
+  try {
+    if (typeof wx.getWindowInfo === "function") {
+      const windowInfo = wx.getWindowInfo();
+      if (windowInfo && windowInfo.statusBarHeight) {
+        return windowInfo.statusBarHeight;
+      }
+    }
+  } catch (error) {
+    console.warn("getWindowInfo unavailable", error);
+  }
+
+  try {
+    const systemInfo = wx.getSystemInfoSync();
+    return systemInfo.statusBarHeight || 24;
+  } catch (error) {
+    console.warn("getSystemInfoSync unavailable", error);
+    return 24;
+  }
+}
+
+function getWindowWidth() {
+  try {
+    if (typeof wx.getWindowInfo === "function") {
+      const windowInfo = wx.getWindowInfo();
+      if (windowInfo && windowInfo.windowWidth) {
+        return windowInfo.windowWidth;
+      }
+    }
+  } catch (error) {
+    console.warn("getWindowInfo width unavailable", error);
+  }
+
+  try {
+    const systemInfo = wx.getSystemInfoSync();
+    return systemInfo.windowWidth || 375;
+  } catch (error) {
+    console.warn("getSystemInfoSync width unavailable", error);
+    return 375;
+  }
+}
+
 App({
   onLaunch() {
-    const systemInfo = wx.getSystemInfoSync();
+    const statusBarHeight = getStatusBarHeight();
+    const windowWidth = getWindowWidth();
     let capsule = {
-      top: (systemInfo.statusBarHeight || 24) + 8,
+      top: statusBarHeight + 8,
+      left: windowWidth - 96,
+      width: 88,
       height: 32,
     };
 
@@ -61,14 +106,17 @@ App({
       console.warn("capsule rect unavailable", error);
     }
 
-    const statusBarHeight = systemInfo.statusBarHeight || 24;
     const navBarHeight =
       (capsule.top - statusBarHeight) * 2 + capsule.height;
+    const navCapsuleInsetRight = Math.max(
+      16,
+      Math.round(windowWidth - (capsule.left || windowWidth - 96) + 8)
+    );
 
     this.globalData = {
       brandName: "芯圈 SemiParty",
       cloudReady: false,
-      cloudEnvId: "",
+      cloudEnvId: "cloud1-5g7efswaf4780b4c",
       useMock: DEV_USE_MOCK,
       openid: "",
       userInfo: null,
@@ -76,6 +124,7 @@ App({
       navBarHeight,
       capsuleTop: capsule.top,
       capsuleHeight: capsule.height,
+      navCapsuleInsetRight,
       userProfile: mockData.userProfile,
       mockState: this.loadMockState(),
     };
@@ -115,6 +164,11 @@ App({
   },
 
   initCloud() {
+    if (this.globalData.useMock) {
+      console.info("mock mode enabled, skip cloud bootstrap");
+      return;
+    }
+
     if (!wx.cloud) {
       console.warn("wx.cloud unavailable");
       return;

@@ -1,8 +1,7 @@
 <view class="page-shell">
-  <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px;">
-    <view class="custom-topbar">
+  <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
+    <view class="custom-topbar" style="min-height: {{capsuleHeight}}px;">
       <view class="brand">{{brandName}}</view>
-      <view class="top-pill">Tab 1 · 资讯</view>
     </view>
   </view>
 
@@ -10,7 +9,7 @@
   <view class="page-subtitle">半导体行业一站式信息平台</view>
 
   <search-bar
-    placeholder="搜索行业新闻、技术文章、公司动态…"
+    placeholder="搜索行业新闻、技术文章、公司动态..."
     bind:searchtap="handleSearch"
   />
 
@@ -42,7 +41,7 @@
 
   <view class="section-header">
     <view class="section-title">今日热点</view>
-    <view class="section-link">更多 ›</view>
+    <view class="section-link">更多 ></view>
   </view>
 
   <view class="news-stream">
@@ -52,5 +51,5 @@
     </block>
   </view>
 
-  <view class="list-footer">{{hasMore ? (loadingMore ? '加载中…' : '') : '没有更多内容了'}}</view>
+  <view class="list-footer">{{hasMore ? (loadingMore ? '加载中...' : '') : '没有更多内容了'}}</view>
 </view>

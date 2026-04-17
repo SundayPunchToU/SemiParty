@@ -1,5 +1,5 @@
 <view class="inner-shell detail-shell">
-  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
     <view class="detail-nav">
       <view class="back-btn" bindtap="goBack">‹</view>
       <view class="nav-title">人才详情</view>

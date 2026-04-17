@@ -1,5 +1,5 @@
 <view class="inner-shell">
-  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
     <view class="search-nav">
       <view class="back-btn" bindtap="goBack">‹</view>
       <input

@@ -117,8 +117,8 @@ const DEV_USE_MOCK = false;
 1. 用微信开发者工具打开仓库根目录
 2. 检查 `miniprogram/envList.js` 是否已配置可用云环境
 3. 根据当前需求设置 `miniprogram/utils/config.js`：
-   - 纯本地联调：`DEV_USE_MOCK = true`
-   - 验证真实云端：`DEV_USE_MOCK = false`
+   - 当前默认：`DEV_USE_MOCK = false`
+   - 如需本地 mock 联调：`DEV_USE_MOCK = true`
 4. 如需云端联调，上传 `cloudfunctions/` 下已接入的函数
 
 ## 5. 核心模块说明

@@ -1,16 +1,16 @@
 <view class="inner-shell">
-  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
-    <view class="create-nav">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
+    <view class="create-nav" style="min-height: {{capsuleHeight}}px;">
       <view class="nav-link" bindtap="goBack">取消</view>
       <view class="inner-title">发布帖子</view>
-      <view class="publish-btn" bindtap="handlePublish">发布</view>
+      <view></view>
     </view>
   </view>
 
   <textarea
     class="editor"
     maxlength="1000"
-    placeholder="分享你的想法、面经或行业见闻…"
+    placeholder="分享你的想法、面经或行业见闻..."
     placeholder-class="editor-placeholder"
     value="{{content}}"
     bindinput="handleInput"
@@ -46,4 +46,6 @@
       <view class="image-add" bindtap="handleAddImage">+</view>
     </view>
   </view>
+
+  <view class="publish-bar" bindtap="handlePublish">发布</view>
 </view>

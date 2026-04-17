@@ -1,8 +1,7 @@
 <view class="page-shell">
-  <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px;">
-    <view class="custom-topbar">
+  <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
+    <view class="custom-topbar" style="min-height: {{capsuleHeight}}px;">
       <view class="brand">{{brandName}}</view>
-      <view class="top-pill">Tab 3 · 消息</view>
     </view>
   </view>
 

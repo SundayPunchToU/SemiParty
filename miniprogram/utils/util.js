@@ -44,7 +44,9 @@ function getNavMetrics() {
   return {
     brandName: app.globalData.brandName,
     statusBarHeight: app.globalData.statusBarHeight,
-    navBarHeight: app.globalData.navBarHeight
+    navBarHeight: app.globalData.navBarHeight,
+    capsuleHeight: app.globalData.capsuleHeight,
+    navCapsuleInsetRight: app.globalData.navCapsuleInsetRight
   };
 }
 

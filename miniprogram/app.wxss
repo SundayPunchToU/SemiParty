@@ -83,21 +83,34 @@ button::after {
 .custom-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: 18rpx;
 }
 
 .brand {
-  flex: 1;
   text-align: center;
-  font-size: 26rpx;
-  color: var(--color-text-secondary);
-  font-weight: 600;
-  letter-spacing: 0.5rpx;
+  font-size: 30rpx;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 700;
+  letter-spacing: 1rpx;
+}
+
+.topbar-spacer {
+  justify-self: start;
+  width: 152rpx;
+  height: 1rpx;
+}
+
+.topbar-action {
+  justify-self: end;
+  width: 152rpx;
 }
 
 .top-pill {
-  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
   padding: 8rpx 16rpx;
   border-radius: var(--radius-full);
   background: rgba(42, 127, 255, 0.22);
