@@ -1,0 +1,178 @@
+/* ===== 卡片整体 ===== */
+.content-card {
+  background: #1E1E32;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 16rpx;
+}
+
+/* ===== A区：来源标签行 ===== */
+.card-source-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.card-zone-name {
+  font-size: 24rpx;
+  color: #4FC3F7;
+}
+
+.card-separator {
+  font-size: 24rpx;
+  color: #666666;
+}
+
+.card-type-tag {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  line-height: 1.4;
+}
+
+/* ===== B区：作者信息行 ===== */
+.card-author-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
+  flex-wrap: wrap;
+}
+
+.card-avatar {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  flex-shrink: 0;
+}
+
+.card-nickname {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.card-dot {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.card-role {
+  font-size: 24rpx;
+  color: #999999;
+}
+
+.card-time {
+  font-size: 24rpx;
+  color: #666666;
+}
+
+/* ===== C区：内容主体 ===== */
+.card-content {
+  margin-bottom: 16rpx;
+}
+
+.card-sd-prefix {
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #EEEEEE;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 8rpx;
+}
+
+.card-job-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #EEEEEE;
+}
+
+.card-job-info {
+  font-size: 26rpx;
+  color: #AAAAAA;
+  line-height: 1.5;
+}
+
+.card-summary {
+  font-size: 28rpx;
+  color: #AAAAAA;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 8rpx;
+}
+
+/* 最佳回答 */
+.card-best-answer {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: #4CAF50;
+}
+
+/* 图片缩略图 */
+.card-images {
+  margin-top: 16rpx;
+  display: flex;
+  gap: 8rpx;
+}
+
+.card-images-single {
+  justify-content: flex-end;
+}
+
+.card-images-single .card-image {
+  width: 160rpx;
+  height: 160rpx;
+}
+
+.card-images-multi {
+  flex: 1;
+}
+
+.card-images-multi .card-image {
+  flex: 1;
+  height: 160rpx;
+  min-width: 0;
+}
+
+.card-image {
+  border-radius: 16rpx;
+  background: #2a2a3e;
+}
+
+/* ===== D区：互动数据行 ===== */
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 48rpx;
+}
+
+.card-action {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.card-action-icon {
+  font-size: 28rpx;
+}
+
+.card-action-num {
+  font-size: 24rpx;
+  color: #666666;
+}

@@ -1,0 +1,91 @@
+<view class="content-card" bindtap="handleCardTap">
+  <!-- A区：来源标签行 -->
+  <view class="card-source-row">
+    <text class="card-zone-name" catchtap="handleZoneTap">{{item.zoneName}}</text>
+    <text class="card-separator">·</text>
+    <view class="card-type-tag" style="background: {{contentTypeColor.bg}}; color: {{contentTypeColor.color}};">
+      {{item.contentType}}
+    </view>
+  </view>
+
+  <!-- B区：作者信息行 -->
+  <view class="card-author-row">
+    <view class="card-avatar" style="background: {{item.author.avatarBg || '#353430'}}; color: {{item.author.avatarColor || '#c4beb4'}};">
+      {{item.isAnonymous ? '匿' : (item.author.avatarText || '?')}}
+    </view>
+    <text class="card-nickname">{{displayName}}</text>
+    <text wx:if="{{displayRole}}" class="card-dot">·</text>
+    <text wx:if="{{displayRole}}" class="card-role">{{displayRole}}</text>
+    <text class="card-dot">·</text>
+    <text class="card-time">{{relativeTime}}</text>
+  </view>
+
+  <!-- C区：内容主体 -->
+  <view class="card-content">
+    <!-- 供需前缀 -->
+    <text wx:if="{{supplyDemandPrefix}}" class="card-sd-prefix" style="color: {{item.supplyType === 'supply' ? '#4CAF50' : '#F44336'}};">{{supplyDemandPrefix}}</text>
+
+    <!-- 招聘特殊摘要 -->
+    <block wx:if="{{item.contentType === '招聘'}}">
+      <view class="card-title">
+        <text class="card-job-title">{{item.jobTitle || item.title}}</text>
+      </view>
+      <view class="card-job-info">{{item.company}} · {{item.salary}} · {{item.experience}} · {{item.education}}</view>
+    </block>
+    <block wx:else>
+      <view class="card-title">{{item.title}}</view>
+      <view class="card-summary">{{item.summary || item.content}}</view>
+    </block>
+
+    <!-- 最佳回答提示 -->
+    <view wx:if="{{hasBestAnswer}}" class="card-best-answer">✅ 已有最佳回答</view>
+
+    <!-- 图片缩略图 -->
+    <view wx:if="{{images.length > 0}}" class="card-images {{images.length === 1 ? 'card-images-single' : 'card-images-multi'}}">
+      <image
+        wx:for="{{images}}"
+        wx:key="*this"
+        class="card-image"
+        src="{{item}}"
+        mode="aspectFill"
+      />
+    </view>
+  </view>
+
+  <!-- D区：互动数据行 -->
+  <view class="card-actions">
+    <block wx:if="{{item.contentType === '招聘'}}">
+      <view class="card-action">
+        <text class="card-action-icon">👀</text>
+        <text class="card-action-num">{{item.views || 0}}</text>
+      </view>
+      <view class="card-action">
+        <text class="card-action-icon">📩</text>
+        <text class="card-action-num">{{item.communications || 0}}</text>
+      </view>
+    </block>
+    <block wx:elif="{{item.contentType === '供需'}}">
+      <view class="card-action">
+        <text class="card-action-icon">👀</text>
+        <text class="card-action-num">{{item.views || 0}}</text>
+      </view>
+      <view class="card-action">
+        <text class="card-action-icon">📨</text>
+        <text class="card-action-num">{{item.responses || 0}}</text>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="card-action">
+        <text class="card-action-icon">💬</text>
+        <text class="card-action-num">{{commentsText}}</text>
+      </view>
+      <view class="card-action">
+        <text class="card-action-icon">👍</text>
+        <text class="card-action-num">{{likesText}}</text>
+      </view>
+      <view class="card-action">
+        <text class="card-action-icon">🔖</text>
+      </view>
+    </block>
+  </view>
+</view>

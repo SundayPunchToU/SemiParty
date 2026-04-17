@@ -1,0 +1,12 @@
+<view class="article-card" bindtap="handleTap">
+  <view class="article-body">
+    <view class="article-title">{{item.title}}</view>
+    <view class="article-meta">
+      <text class="article-source">{{item.source}}</text>
+      <text class="article-time">{{relativeTime}}</text>
+    </view>
+  </view>
+  <view wx:if="{{item.cover}}" class="article-cover">
+    <image src="{{item.cover}}" class="article-cover-img" mode="aspectFill" />
+  </view>
+</view>
