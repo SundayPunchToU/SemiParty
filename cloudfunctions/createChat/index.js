@@ -6,6 +6,16 @@ cloud.init({
 
 const db = cloud.database();
 
+async function findUserByUidOrOpenid(uidOrOpenid) {
+  const byOpenid = await db.collection("users").where({ openid: uidOrOpenid }).limit(1).get();
+  if (byOpenid.data.length) {
+    return byOpenid.data[0];
+  }
+
+  const byUid = await db.collection("users").where({ uid: uidOrOpenid }).limit(1).get();
+  return byUid.data[0] || null;
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext();
   const { targetUid, type = "private" } = event;
@@ -14,10 +24,18 @@ exports.main = async (event) => {
     throw new Error("targetUid is required");
   }
 
+  const currentUser = await findUserByUidOrOpenid(OPENID);
+  const targetUser = await findUserByUidOrOpenid(targetUid);
+
+  if (!targetUser) {
+    throw new Error("chat participants not found");
+  }
+
+  const targetOpenid = targetUser.openid;
   const existing = await db.collection("chats").where({ type }).limit(100).get();
   const matched = existing.data.find((item) => {
     const participants = item.participants || [];
-    return participants.includes(OPENID) && participants.includes(targetUid);
+    return participants.includes(OPENID) && participants.includes(targetOpenid);
   });
 
   if (matched) {
@@ -29,32 +47,30 @@ exports.main = async (event) => {
     };
   }
 
-  const userRes = await db.collection("users").where({ openid: OPENID }).limit(1).get();
-  const targetRes = await db.collection("users").where({ openid: targetUid }).limit(1).get();
-
-  if (!userRes.data.length || !targetRes.data.length) {
+  if (!currentUser) {
     throw new Error("chat participants not found");
   }
 
   const data = {
     type,
-    participants: [OPENID, targetUid],
+    participants: [OPENID, targetOpenid],
     participantProfiles: [
       {
         uid: OPENID,
-        name: userRes.data[0].nickName,
-        avatarText: userRes.data[0].avatarText,
+        name: currentUser.nickName || currentUser.nickname || "我",
+        avatarText: currentUser.avatarText || "我",
       },
       {
-        uid: targetUid,
-        name: targetRes.data[0].nickName,
-        avatarText: targetRes.data[0].avatarText,
+        uid: targetOpenid,
+        name: targetUser.nickName || targetUser.nickname || "候选人",
+        avatarText: targetUser.avatarText || "聊",
       },
     ],
     lastMessage: "",
+    lastMessageAt: db.serverDate(),
     unreadMap: {
       [OPENID]: 0,
-      [targetUid]: 0,
+      [targetOpenid]: 0,
     },
     createdAt: db.serverDate(),
     updatedAt: db.serverDate(),

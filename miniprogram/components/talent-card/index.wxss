@@ -51,3 +51,7 @@
   font-size: 24rpx;
   font-weight: 600;
 }
+
+.talent-btn.is-loading {
+  opacity: 0.6;
+}

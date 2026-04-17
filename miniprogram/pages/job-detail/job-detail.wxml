@@ -1,0 +1,53 @@
+<view class="inner-shell detail-shell">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="detail-nav">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="nav-title">岗位详情</view>
+      <view class="nav-placeholder"></view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="detail-empty">加载中...</view>
+
+  <block wx:elif="{{job}}">
+    <view class="hero-card panel">
+      <view class="hero-top">
+        <view>
+          <view class="detail-title">{{job.title}}</view>
+          <view class="detail-company">{{job.company}}</view>
+        </view>
+        <view class="salary-pill">{{job.salary || '薪资面议'}}</view>
+      </view>
+      <view class="detail-meta">{{job.city || '城市待补充'}} · {{job.experience || '经验不限'}} · {{job.education || '学历不限'}}</view>
+      <view class="detail-tags">
+        <text wx:for="{{job.tags}}" wx:key="*this" class="tag tag-blue">{{item}}</text>
+        <text wx:if="{{job.category}}" class="tag tag-mint">{{job.category}}</text>
+      </view>
+    </view>
+
+    <view class="section-card soft-panel">
+      <view class="section-title">岗位说明</view>
+      <view class="section-text">{{job.description || '当前岗位描述尚未补充，建议先投递或建联进一步沟通。'}}</view>
+    </view>
+
+    <view class="section-card soft-panel">
+      <view class="section-title">补充信息</view>
+      <view class="info-row">
+        <text class="info-label">亮点</text>
+        <text class="info-value">{{job.bonus || '暂未填写'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">当前投递数</text>
+        <text class="info-value">{{job.applicationsCount || 0}}</text>
+      </view>
+    </view>
+  </block>
+
+  <view wx:else class="detail-empty">未找到岗位信息</view>
+
+  <view class="bottom-bar">
+    <view class="primary-btn {{applying ? 'is-disabled' : ''}}" bindtap="handleApply">
+      {{applying ? '投递中...' : '投递岗位'}}
+    </view>
+  </view>
+</view>

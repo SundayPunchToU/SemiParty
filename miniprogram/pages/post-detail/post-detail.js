@@ -11,14 +11,25 @@ Page({
   },
 
   async onLoad(options) {
-    const post = await api.getPostDetail(options.id);
     this.setData({
       ...getNavMetrics(),
-      post,
-      publishTime: formatRelative(post.createdAt),
       focusComment: options.focus === "comment"
     });
-    this.loadComments(options.id);
+
+    try {
+      const post = await api.getPostDetail(options.id);
+      this.setData({
+        post,
+        publishTime: formatRelative(post.createdAt)
+      });
+      this.loadComments(options.id);
+    } catch (error) {
+      console.error("load post detail failed", error);
+      wx.showToast({
+        title: error.message || "帖子加载失败",
+        icon: "none"
+      });
+    }
   },
 
   async loadComments(postId) {

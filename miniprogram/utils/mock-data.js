@@ -400,6 +400,7 @@ const jobList = [
 const talentList = [
   {
     id: "talent_001",
+    uid: "mock_talent_001",
     name: "陈**",
     education: "硕士",
     school: "清华大学 · 微电子",
@@ -414,6 +415,7 @@ const talentList = [
   },
   {
     id: "talent_002",
+    uid: "mock_talent_002",
     name: "周**",
     education: "博士",
     school: "复旦大学 · 材料",
@@ -428,6 +430,7 @@ const talentList = [
   },
   {
     id: "talent_003",
+    uid: "mock_talent_003",
     name: "林**",
     education: "硕士",
     school: "上海交大 · 集成电路",
@@ -442,6 +445,7 @@ const talentList = [
   },
   {
     id: "talent_004",
+    uid: "mock_talent_004",
     name: "何**",
     education: "本科",
     school: "西电 · 微电子",

@@ -46,18 +46,27 @@ Page({
 
   async loadPosts(reset = false) {
     const nextPage = reset ? 1 : this.data.page;
-    const result = await api.getPostList(this.data.activeTab, nextPage);
-    const sourcePosts = reset
-      ? result.data
-      : this.data.sourcePosts.concat(result.data);
+    try {
+      const result = await api.getPostList(this.data.activeTab, nextPage);
+      const sourcePosts = reset
+        ? result.data
+        : this.data.sourcePosts.concat(result.data);
 
-    this.setData({
-      sourcePosts,
-      posts: this.applyTopicFilter(sourcePosts),
-      page: nextPage + 1,
-      hasMore: result.hasMore,
-      loadingMore: false
-    });
+      this.setData({
+        sourcePosts,
+        posts: this.applyTopicFilter(sourcePosts),
+        page: nextPage + 1,
+        hasMore: result.hasMore,
+        loadingMore: false
+      });
+    } catch (error) {
+      console.error("loadPosts failed", error);
+      this.setData({ loadingMore: false });
+      wx.showToast({
+        title: error.message || "帖子加载失败",
+        icon: "none"
+      });
+    }
   },
 
   async onPullDownRefresh() {

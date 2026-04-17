@@ -31,12 +31,23 @@ Page({
   },
 
   async onLoad() {
-    const profile = await api.getUserProfile();
     this.setData({
-      ...getNavMetrics(),
-      profile,
-      statusConfig: this.getStatusConfig(profile.jobStatus)
+      ...getNavMetrics()
     });
+
+    try {
+      const profile = await api.getUserProfile();
+      this.setData({
+        profile,
+        statusConfig: this.getStatusConfig(profile.jobStatus)
+      });
+    } catch (error) {
+      console.error("load profile failed", error);
+      wx.showToast({
+        title: error.message || "个人信息加载失败",
+        icon: "none"
+      });
+    }
   },
 
   getStatusConfig(statusKey) {

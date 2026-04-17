@@ -17,13 +17,23 @@ Component({
 
         this.setData({ statusClass });
       }
+    },
+    loading: {
+      type: Boolean,
+      value: false
     }
   },
   data: {
     statusClass: "tag-orange"
   },
   methods: {
+    handleTap() {
+      this.triggerEvent("cardtap", { id: this.properties.item.id });
+    },
     handleContact() {
+      if (this.properties.loading) {
+        return;
+      }
       this.triggerEvent("contact", { id: this.properties.item.id });
     }
   }

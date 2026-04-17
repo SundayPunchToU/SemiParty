@@ -11,6 +11,8 @@
   </view>
   <view class="job-bottom">
     <text class="job-bonus">{{item.bonus}}</text>
-    <view class="job-apply" catchtap="handleApply">投递简历</view>
+    <view class="job-apply {{loading ? 'is-loading' : ''}}" catchtap="handleApply">
+      {{loading ? '投递中...' : '投递简历'}}
+    </view>
   </view>
 </view>

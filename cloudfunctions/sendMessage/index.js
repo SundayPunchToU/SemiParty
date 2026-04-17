@@ -45,6 +45,7 @@ exports.main = async (event) => {
   await db.collection("chats").doc(chatId).update({
     data: {
       lastMessage: type === "image" ? "[image]" : String(content).slice(0, 80),
+      lastMessageAt: db.serverDate(),
       unreadMap,
       updatedAt: db.serverDate(),
     },

@@ -29,18 +29,24 @@ Page({
   },
 
   async loadNews(reset = false) {
-    const nextPage = reset ? 1 : this.data.page;
-    const result = await api.getNewsList(this.data.activeTab, nextPage);
-    const newsList = reset
-      ? result.data
-      : this.data.newsList.concat(result.data);
+    try {
+      const nextPage = reset ? 1 : this.data.page;
+      const result = await api.getNewsList(this.data.activeTab, nextPage);
+      const newsList = reset
+        ? result.data
+        : this.data.newsList.concat(result.data);
 
-    this.setData({
-      newsList,
-      page: nextPage + 1,
-      hasMore: result.hasMore,
-      loadingMore: false
-    });
+      this.setData({
+        newsList,
+        page: nextPage + 1,
+        hasMore: result.hasMore,
+        loadingMore: false
+      });
+    } catch (error) {
+      console.error("loadNews failed", error);
+      this.setData({ loadingMore: false });
+      wx.showToast({ title: "资讯加载失败", icon: "none" });
+    }
   },
 
   async onPullDownRefresh() {
@@ -58,7 +64,7 @@ Page({
   },
 
   handleSearch() {
-    wx.showToast({ title: "搜索页待接入", icon: "none" });
+    wx.navigateTo({ url: "/pages/search/search" });
   },
 
   handleQuickNav(event) {

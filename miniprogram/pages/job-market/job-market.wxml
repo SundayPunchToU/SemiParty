@@ -43,13 +43,27 @@
     </scroll-view>
 
     <view class="market-list">
-      <job-card wx:for="{{jobList}}" wx:key="id" item="{{item}}" bind:apply="handleApply" />
+      <job-card
+        wx:for="{{jobList}}"
+        wx:key="id"
+        item="{{item}}"
+        loading="{{applyingJobId === item.id}}"
+        bind:cardtap="openJobDetail"
+        bind:apply="handleApply"
+      />
     </view>
   </view>
 
   <view wx:else>
     <view class="market-list">
-      <talent-card wx:for="{{talentList}}" wx:key="id" item="{{item}}" bind:contact="handleContact" />
+      <talent-card
+        wx:for="{{talentList}}"
+        wx:key="id"
+        item="{{item}}"
+        loading="{{contactingTalentId === item.id}}"
+        bind:cardtap="openTalentDetail"
+        bind:contact="handleContact"
+      />
     </view>
   </view>
 </view>

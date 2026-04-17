@@ -48,9 +48,32 @@ function getNavMetrics() {
   };
 }
 
+function formatChatTime(dateText) {
+  if (!dateText) {
+    return "";
+  }
+
+  const date = new Date(dateText);
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+
+  if (sameDay) {
+    return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  }
+
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return "昨天";
+  }
+
+  return `${date.getMonth() + 1}-${date.getDate()}`;
+}
+
 module.exports = {
   deepClone,
   formatCount,
   formatRelative,
+  formatChatTime,
   getNavMetrics
 };

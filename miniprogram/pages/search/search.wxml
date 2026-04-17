@@ -1,0 +1,73 @@
+<view class="inner-shell">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="search-nav">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <input
+        class="search-input"
+        value="{{keyword}}"
+        placeholder="搜索资讯、帖子、岗位、人才"
+        confirm-type="search"
+        focus="{{true}}"
+        bindinput="handleInput"
+        bindconfirm="handleSearch"
+      />
+      <view class="search-btn" bindtap="handleSearch">搜索</view>
+    </view>
+  </view>
+
+  <view class="search-tabs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="search-tab {{activeType === item.key ? 'is-active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="handleTabChange"
+    >
+      {{item.label}}
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="search-placeholder">搜索中...</view>
+  <view wx:elif="{{!searched}}" class="search-placeholder">输入关键词开始搜索</view>
+
+  <view wx:elif="{{activeType === 'all'}}" class="search-result-wrap">
+    <block wx:for="{{['news','posts','jobs','talents']}}" wx:key="*this">
+      <view wx:if="{{groupedResults[item] && groupedResults[item].length}}" class="result-section">
+        <view class="result-title">{{item === 'news' ? '资讯' : item === 'posts' ? '帖子' : item === 'jobs' ? '岗位' : '人才'}}</view>
+        <view
+          wx:for="{{groupedResults[item]}}"
+          wx:for-item="entry"
+          wx:key="id"
+          class="result-item"
+          data-type="{{item === 'posts' ? 'post' : item === 'jobs' ? 'job' : item === 'talents' ? 'talent' : 'news'}}"
+          data-id="{{entry.id}}"
+          bindtap="openResult"
+        >
+          <view class="result-main">{{entry.title || entry.content || entry.name}}</view>
+          <view class="result-sub">{{entry.company || entry.source || entry.school || entry.topic.text || entry.targetRole}}</view>
+        </view>
+      </view>
+    </block>
+    <view
+      wx:if="{{(!groupedResults.news || !groupedResults.news.length) && (!groupedResults.posts || !groupedResults.posts.length) && (!groupedResults.jobs || !groupedResults.jobs.length) && (!groupedResults.talents || !groupedResults.talents.length)}}"
+      class="search-placeholder"
+    >
+      暂无结果
+    </view>
+  </view>
+
+  <view wx:else class="search-result-wrap">
+    <view wx:if="{{listResults.length === 0}}" class="search-placeholder">暂无结果</view>
+    <view
+      wx:for="{{listResults}}"
+      wx:key="id"
+      class="result-item"
+      data-type="{{activeType}}"
+      data-id="{{item.id}}"
+      bindtap="openResult"
+    >
+      <view class="result-main">{{item.title || item.content || item.name}}</view>
+      <view class="result-sub">{{item.company || item.source || item.school || (item.topic && item.topic.text) || item.targetRole}}</view>
+    </view>
+  </view>
+</view>

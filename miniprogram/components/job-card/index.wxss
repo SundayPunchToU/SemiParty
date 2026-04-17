@@ -62,3 +62,7 @@
   font-size: 24rpx;
   font-weight: 600;
 }
+
+.job-apply.is-loading {
+  opacity: 0.6;
+}

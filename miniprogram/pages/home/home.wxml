@@ -11,7 +11,6 @@
 
   <search-bar
     placeholder="搜索行业新闻、技术文章、公司动态…"
-    disabled="{{true}}"
     bind:searchtap="handleSearch"
   />
 

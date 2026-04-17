@@ -10,13 +10,24 @@ Page({
   },
 
   async onLoad(options) {
-    const article = await api.getArticleDetail(options.id);
     this.setData({
-      ...getNavMetrics(),
-      article,
-      viewCount: formatCount(article.views),
-      publishTime: formatRelative(article.time)
+      ...getNavMetrics()
     });
+
+    try {
+      const article = await api.getArticleDetail(options.id);
+      this.setData({
+        article,
+        viewCount: formatCount(article.views),
+        publishTime: formatRelative(article.time)
+      });
+    } catch (error) {
+      console.error("load article detail failed", error);
+      wx.showToast({
+        title: error.message || "文章加载失败",
+        icon: "none"
+      });
+    }
   },
 
   goBack() {

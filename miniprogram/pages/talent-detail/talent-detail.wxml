@@ -1,0 +1,55 @@
+<view class="inner-shell detail-shell">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="detail-nav">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="nav-title">人才详情</view>
+      <view class="nav-placeholder"></view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="detail-empty">加载中...</view>
+
+  <block wx:elif="{{talent}}">
+    <view class="hero-card panel">
+      <view class="hero-head">
+        <view class="avatar-circle hero-avatar" style="background: {{talent.avatarBg}}; color: {{talent.avatarColor}};">
+          {{talent.avatarText}}
+        </view>
+        <view class="hero-main">
+          <view class="detail-title">{{talent.name}}</view>
+          <view class="detail-role">{{talent.currentRole || '当前岗位待补充'}}</view>
+          <view class="detail-meta">{{talent.school || '学校待补充'}} · {{talent.education || '学历待补充'}} · {{talent.years || 0}} 年经验</view>
+        </view>
+      </view>
+      <view class="detail-tags">
+        <text wx:for="{{talent.tags}}" wx:key="*this" class="tag tag-blue">{{item}}</text>
+        <text wx:if="{{talent.status}}" class="tag tag-green">{{talent.status}}</text>
+      </view>
+    </view>
+
+    <view class="section-card soft-panel">
+      <view class="section-title">求职方向</view>
+      <view class="section-text">{{introText}}</view>
+    </view>
+
+    <view class="section-card soft-panel">
+      <view class="section-title">沟通建议</view>
+      <view class="info-row">
+        <text class="info-label">优先话题</text>
+        <text class="info-value">{{talent.tags && talent.tags.length ? talent.tags[0] : '项目经验'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">当前状态</text>
+        <text class="info-value">{{talent.status || '待确认'}}</text>
+      </view>
+    </view>
+  </block>
+
+  <view wx:else class="detail-empty">未找到人才信息</view>
+
+  <view class="bottom-bar">
+    <view class="primary-btn {{contacting ? 'is-disabled' : ''}}" bindtap="handleContact">
+      {{contacting ? '创建中...' : '联系TA'}}
+    </view>
+  </view>
+</view>

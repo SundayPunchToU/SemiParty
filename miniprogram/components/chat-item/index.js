@@ -7,7 +7,10 @@ Component({
   },
   methods: {
     handleTap() {
-      this.triggerEvent("itemtap", { id: this.properties.item.id });
+      this.triggerEvent("itemtap", {
+        id: this.properties.item.id,
+        item: this.properties.item,
+      });
     }
   }
 });

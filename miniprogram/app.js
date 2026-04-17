@@ -1,4 +1,51 @@
 const mockData = require("./utils/mock-data");
+const { DEV_USE_MOCK } = require("./utils/config");
+
+const MOCK_STATE_STORAGE_KEY = "semi_party_mock_state";
+
+function createDefaultMockState() {
+  const chats = mockData.chatList.map((item) => ({ ...item }));
+  const chatMessages = {};
+
+  chats.forEach((item) => {
+    chatMessages[item.id] = [];
+  });
+
+  return {
+    appliedJobs: {},
+    chats,
+    chatMessages,
+  };
+}
+
+function normalizeMockState(rawState) {
+  const defaultState = createDefaultMockState();
+  if (!rawState || typeof rawState !== "object") {
+    return defaultState;
+  }
+
+  const chats = Array.isArray(rawState.chats)
+    ? rawState.chats.map((item) => ({ ...item }))
+    : defaultState.chats;
+  const chatMessages = rawState.chatMessages && typeof rawState.chatMessages === "object"
+    ? { ...rawState.chatMessages }
+    : {};
+
+  chats.forEach((item) => {
+    if (!Array.isArray(chatMessages[item.id])) {
+      chatMessages[item.id] = [];
+    }
+  });
+
+  return {
+    appliedJobs:
+      rawState.appliedJobs && typeof rawState.appliedJobs === "object"
+        ? { ...rawState.appliedJobs }
+        : {},
+    chats,
+    chatMessages,
+  };
+}
 
 App({
   onLaunch() {
@@ -22,6 +69,7 @@ App({
       brandName: "芯圈 SemiParty",
       cloudReady: false,
       cloudEnvId: "",
+      useMock: DEV_USE_MOCK,
       openid: "",
       userInfo: null,
       statusBarHeight,
@@ -29,14 +77,46 @@ App({
       capsuleTop: capsule.top,
       capsuleHeight: capsule.height,
       userProfile: mockData.userProfile,
+      mockState: this.loadMockState(),
     };
 
     this.initCloud();
   },
 
+  loadMockState() {
+    try {
+      const rawState = wx.getStorageSync(MOCK_STATE_STORAGE_KEY);
+      return normalizeMockState(rawState);
+    } catch (error) {
+      console.warn("loadMockState failed", error);
+      return createDefaultMockState();
+    }
+  },
+
+  saveMockState(nextState) {
+    const normalized = normalizeMockState(nextState);
+    if (this.globalData) {
+      this.globalData.mockState = normalized;
+    }
+
+    try {
+      wx.setStorageSync(MOCK_STATE_STORAGE_KEY, normalized);
+    } catch (error) {
+      console.warn("saveMockState failed", error);
+    }
+
+    return normalized;
+  },
+
+  resetMockState() {
+    const nextState = createDefaultMockState();
+    this.saveMockState(nextState);
+    return nextState;
+  },
+
   initCloud() {
     if (!wx.cloud) {
-      console.warn("wx.cloud unavailable, mock mode enabled");
+      console.warn("wx.cloud unavailable");
       return;
     }
 
@@ -69,7 +149,7 @@ App({
         this.globalData.userProfile = user;
       }
     } catch (error) {
-      console.warn("cloud login failed, mock mode fallback", error);
+      console.warn("cloud login failed", error);
     }
   },
 });

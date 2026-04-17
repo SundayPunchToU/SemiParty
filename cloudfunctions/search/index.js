@@ -7,6 +7,26 @@ cloud.init({
 const db = cloud.database();
 
 const PAGE_SIZE = 20;
+const CHUNK_SIZE = 40;
+const DEFAULT_SCAN_LIMIT = 160;
+const SEARCH_CONFIG = {
+  news: {
+    collection: "news",
+    fields: ["title", "summary", "content", "source"],
+  },
+  post: {
+    collection: "posts",
+    fields: ["content", "category", "topic"],
+  },
+  job: {
+    collection: "jobs",
+    fields: ["title", "company", "city", "description", "tags"],
+  },
+  talent: {
+    collection: "talents",
+    fields: ["name", "nameDesensitized", "school", "currentRole", "targetRole", "tags"],
+  },
+};
 
 function containsKeyword(record, keyword, fields) {
   const source = fields
@@ -26,15 +46,51 @@ function containsKeyword(record, keyword, fields) {
   return source.includes(keyword.toLowerCase());
 }
 
-async function searchCollection(collectionName, keyword, fields, page) {
-  const res = await db.collection(collectionName).limit(100).get();
-  const filtered = res.data.filter((item) => containsKeyword(item, keyword, fields));
+async function scanCollectionForKeyword(type, keyword, page, options = {}) {
+  const config = SEARCH_CONFIG[type];
+  if (!config) {
+    return {
+      data: [],
+      hasMore: false,
+    };
+  }
+
+  const requiredMatches = Math.max(1, page) * PAGE_SIZE;
+  const maxMatches = options.maxMatches || requiredMatches;
+  const scanLimit = options.scanLimit || DEFAULT_SCAN_LIMIT;
+  const matched = [];
+  let scanned = 0;
+  let hasMoreSource = true;
+
+  while (scanned < scanLimit && hasMoreSource && matched.length < maxMatches) {
+    const batch = await db
+      .collection(config.collection)
+      .skip(scanned)
+      .limit(CHUNK_SIZE)
+      .get();
+
+    const docs = batch.data || [];
+    if (!docs.length) {
+      hasMoreSource = false;
+      break;
+    }
+
+    docs.forEach((item) => {
+      if (containsKeyword(item, keyword, config.fields)) {
+        matched.push(item);
+      }
+    });
+
+    scanned += docs.length;
+    hasMoreSource = docs.length === CHUNK_SIZE;
+  }
+
   const start = (page - 1) * PAGE_SIZE;
-  const data = filtered.slice(start, start + PAGE_SIZE);
+  const end = start + PAGE_SIZE;
 
   return {
-    data,
-    hasMore: start + PAGE_SIZE < filtered.length,
+    data: matched.slice(start, end),
+    hasMore: matched.length > end || (hasMoreSource && scanned < scanLimit),
   };
 }
 
@@ -46,41 +102,34 @@ exports.main = async (event) => {
   if (!keyword) {
     return {
       success: true,
-      data: [],
+      data: type === "all" ? { news: [], posts: [], jobs: [], talents: [] } : [],
       hasMore: false,
     };
   }
 
-  if (type === "news") {
-    return searchCollection("news", keyword, ["title", "summary", "content", "source"], page);
+  if (type === "news" || type === "post" || type === "job" || type === "talent") {
+    const result = await scanCollectionForKeyword(type, keyword, page);
+    return {
+      success: true,
+      data: result.data,
+      hasMore: result.hasMore,
+    };
   }
 
-  if (type === "post") {
-    return searchCollection("posts", keyword, ["content", "category", "topic"], page);
-  }
-
-  if (type === "job") {
-    return searchCollection("jobs", keyword, ["title", "company", "city", "description", "tags"], page);
-  }
-
-  if (type === "talent") {
-    return searchCollection("talents", keyword, ["nameDesensitized", "school", "currentRole", "targetRole", "tags"], page);
-  }
-
-  const [news, posts, jobs, talents] = await Promise.all([
-    searchCollection("news", keyword, ["title", "summary", "content", "source"], 1),
-    searchCollection("posts", keyword, ["content", "category", "topic"], 1),
-    searchCollection("jobs", keyword, ["title", "company", "city", "description", "tags"], 1),
-    searchCollection("talents", keyword, ["nameDesensitized", "school", "currentRole", "targetRole", "tags"], 1),
+  const [news, post, job, talent] = await Promise.all([
+    scanCollectionForKeyword("news", keyword, 1, { maxMatches: 6, scanLimit: 80 }),
+    scanCollectionForKeyword("post", keyword, 1, { maxMatches: 6, scanLimit: 80 }),
+    scanCollectionForKeyword("job", keyword, 1, { maxMatches: 6, scanLimit: 80 }),
+    scanCollectionForKeyword("talent", keyword, 1, { maxMatches: 6, scanLimit: 80 }),
   ]);
 
   return {
     success: true,
     data: {
       news: news.data,
-      posts: posts.data,
-      jobs: jobs.data,
-      talents: talents.data,
+      posts: post.data,
+      jobs: job.data,
+      talents: talent.data,
     },
     hasMore: false,
   };

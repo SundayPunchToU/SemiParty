@@ -1,4 +1,4 @@
-<view class="talent-card panel">
+<view class="talent-card panel" bindtap="handleTap">
   <view class="talent-head">
     <view class="avatar-circle talent-avatar" style="background: {{item.avatarBg}}; color: {{item.avatarColor}};">
       {{item.avatarText}}
@@ -14,6 +14,8 @@
     <text class="tag {{statusClass}}">{{item.status}}</text>
   </view>
   <view class="talent-footer">
-    <view class="talent-btn" bindtap="handleContact">主动沟通</view>
+    <view class="talent-btn {{loading ? 'is-loading' : ''}}" catchtap="handleContact">
+      {{loading ? '创建中...' : '主动沟通'}}
+    </view>
   </view>
 </view>

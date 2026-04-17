@@ -12,7 +12,9 @@ Page({
     activeFilter: "all",
     keyword: "",
     jobList: [],
-    talentList: []
+    talentList: [],
+    applyingJobId: "",
+    contactingTalentId: ""
   },
 
   async onLoad() {
@@ -23,20 +25,30 @@ Page({
   },
 
   async loadJobs() {
-    const result = await api.getJobList(this.data.activeFilter);
-    const keyword = this.data.keyword.trim().toLowerCase();
-    const jobList = keyword
-      ? result.data.filter((item) => {
-          const source = `${item.title}${item.company}${item.city}${item.tags.join("")}`.toLowerCase();
-          return source.includes(keyword);
-        })
-      : result.data;
-    this.setData({ jobList });
+    try {
+      const result = await api.getJobList(this.data.activeFilter);
+      const keyword = this.data.keyword.trim().toLowerCase();
+      const jobList = keyword
+        ? result.data.filter((item) => {
+            const source = `${item.title}${item.company}${item.city}${(item.tags || []).join("")}`.toLowerCase();
+            return source.includes(keyword);
+          })
+        : result.data;
+      this.setData({ jobList });
+    } catch (error) {
+      console.error("loadJobs failed", error);
+      wx.showToast({ title: "岗位加载失败", icon: "none" });
+    }
   },
 
   async loadTalents() {
-    const result = await api.getTalentList(this.data.keyword);
-    this.setData({ talentList: result.data });
+    try {
+      const result = await api.getTalentList(this.data.keyword);
+      this.setData({ talentList: result.data });
+    } catch (error) {
+      console.error("loadTalents failed", error);
+      wx.showToast({ title: "人才加载失败", icon: "none" });
+    }
   },
 
   async handleModeChange(event) {
@@ -70,12 +82,86 @@ Page({
     await this.loadTalents();
   },
 
-  handleApply() {
-    wx.showToast({ title: "投递功能开发中", icon: "none" });
+  async handleApply(event) {
+    const jobId = event.detail.id;
+    if (!jobId || this.data.applyingJobId) {
+      return;
+    }
+
+    this.setData({ applyingJobId: jobId });
+    try {
+      await api.login();
+      const result = await api.applyJob(jobId);
+      wx.showToast({
+        title: result.duplicated ? "该岗位已投递" : "投递成功",
+        icon: "none",
+      });
+    } catch (error) {
+      console.error("apply job failed", error);
+      wx.showToast({
+        title: error.message || "投递失败，请稍后重试",
+        icon: "none",
+      });
+    } finally {
+      this.setData({ applyingJobId: "" });
+    }
   },
 
-  handleContact() {
-    wx.showToast({ title: "沟通能力开发中", icon: "none" });
+  openJobDetail(event) {
+    const id = event.detail.id;
+    if (!id) {
+      return;
+    }
+
+    wx.navigateTo({
+      url: `/pages/job-detail/job-detail?id=${id}`,
+    });
+  },
+
+  openTalentDetail(event) {
+    const id = event.detail.id;
+    if (!id) {
+      return;
+    }
+
+    wx.navigateTo({
+      url: `/pages/talent-detail/talent-detail?id=${id}`,
+    });
+  },
+
+  async handleContact(event) {
+    const talentId = event.detail.id;
+    if (!talentId || this.data.contactingTalentId) {
+      return;
+    }
+
+    const talent = this.data.talentList.find((item) => item.id === talentId);
+    const targetUid = talent && (talent.uid || talent.openid || talent.id);
+    if (!targetUid) {
+      wx.showToast({ title: "候选人信息缺失", icon: "none" });
+      return;
+    }
+
+    this.setData({ contactingTalentId: talentId });
+    try {
+      await api.login();
+      const result = await api.createChat(targetUid);
+      const chatId = result.chatId || (result.data && result.data._id) || "";
+      if (!chatId) {
+        throw new Error("chatId missing");
+      }
+      wx.navigateTo({
+        url: `/pages/chat-detail/chat-detail?chatId=${chatId}&title=${encodeURIComponent(talent.name || "候选人")}`,
+      });
+    } catch (error) {
+      console.error("create chat failed", error);
+      wx.showToast({
+        title: error.message || "发起私聊失败",
+        icon: "none",
+      });
+    } finally {
+      this.setData({ contactingTalentId: "" });
+    }
   },
 
   goBack() {

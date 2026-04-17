@@ -18,11 +18,20 @@ Page({
     this.loadChats();
   },
 
+  onShow() {
+    this.loadChats();
+  },
+
   async loadChats() {
-    const result = await api.getChatList(this.data.activeTab);
-    this.setData({
-      chatList: result.data
-    });
+    try {
+      const result = await api.getChatList(this.data.activeTab);
+      this.setData({
+        chatList: result.data
+      });
+    } catch (error) {
+      console.error("loadChats failed", error);
+      wx.showToast({ title: "会话加载失败", icon: "none" });
+    }
   },
 
   async handleTabChange(event) {
@@ -35,7 +44,15 @@ Page({
     await this.loadChats();
   },
 
-  openChat() {
-    wx.showToast({ title: "聊天页待接入", icon: "none" });
+  openChat(event) {
+    const item = event.detail.item;
+    if (!item || !item.id) {
+      wx.showToast({ title: "会话信息异常", icon: "none" });
+      return;
+    }
+
+    wx.navigateTo({
+      url: `/pages/chat-detail/chat-detail?chatId=${item.id}&title=${encodeURIComponent(item.name || "会话")}`
+    });
   }
 });

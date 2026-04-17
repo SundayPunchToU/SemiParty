@@ -1,0 +1,35 @@
+<view class="inner-shell chat-shell">
+  <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="chat-nav">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="chat-title">{{title}}</view>
+      <view class="chat-nav-placeholder"></view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="chat-empty">加载中...</view>
+  <view wx:elif="{{messages.length === 0}}" class="chat-empty">暂无消息，发一条开始沟通</view>
+
+  <scroll-view wx:else scroll-y="true" class="message-scroll" scroll-into-view="{{lastMessageId}}">
+    <view wx:for="{{messages}}" wx:key="id" id="msg_{{item.id}}" class="message-row {{item.isMine ? 'is-mine' : ''}}">
+      <view class="message-bubble {{item.isMine ? 'is-mine' : ''}}">
+        <view class="message-text">{{item.content}}</view>
+        <view class="message-time">{{item.displayTime}}</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="composer-bar">
+    <input
+      class="composer-input"
+      value="{{inputValue}}"
+      placeholder="输入消息..."
+      confirm-type="send"
+      bindinput="handleInput"
+      bindconfirm="handleSend"
+    />
+    <view class="composer-send {{sending ? 'is-disabled' : ''}}" bindtap="handleSend">
+      {{sending ? '发送中' : '发送'}}
+    </view>
+  </view>
+</view>
