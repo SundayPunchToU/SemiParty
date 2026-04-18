@@ -4,7 +4,12 @@
   </view>
   <view class="chat-body">
     <view class="chat-top">
-      <text class="chat-name">{{item.name}}</text>
+      <!-- === STEP 1.6 修改开始：追加角色标签 === -->
+      <view class="chat-name-row">
+        <text class="chat-name">{{item.name}}</text>
+        <text wx:if="{{item.role}}" class="chat-role-tag">{{item.role}}</text>
+      </view>
+      <!-- === STEP 1.6 修改结束 === -->
       <text class="chat-time">{{item.time}}</text>
     </view>
     <view class="chat-bottom">

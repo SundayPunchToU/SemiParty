@@ -1,0 +1,60 @@
+<view class="page-sub">
+  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="nav-inner">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="nav-title">通知设置</view>
+      <view style="width: 56rpx;"></view>
+    </view>
+  </view>
+
+  <!-- 互动通知 -->
+  <view class="section-label">互动通知</view>
+  <view class="card-group">
+    <view class="card-row">
+      <text class="row-text">评论和回复</text>
+      <switch checked="{{items.comment}}" color="#2A7FFF" data-key="comment" bindchange="onToggle" />
+    </view>
+    <view class="card-row">
+      <text class="row-text">点赞</text>
+      <switch checked="{{items.like}}" color="#2A7FFF" data-key="like" bindchange="onToggle" />
+    </view>
+    <view class="card-row">
+      <text class="row-text">@提到我</text>
+      <switch checked="{{items.mention}}" color="#2A7FFF" data-key="mention" bindchange="onToggle" />
+    </view>
+    <view class="card-row">
+      <text class="row-text">新粉丝</text>
+      <switch checked="{{items.newFollower}}" color="#2A7FFF" data-key="newFollower" bindchange="onToggle" />
+    </view>
+  </view>
+
+  <!-- 消息通知 -->
+  <view class="section-label">消息通知</view>
+  <view class="card-group">
+    <view class="card-row">
+      <text class="row-text">私聊消息</text>
+      <switch checked="{{items.privateMsg}}" color="#2A7FFF" data-key="privateMsg" bindchange="onToggle" />
+    </view>
+    <view class="card-row">
+      <text class="row-text">群组消息</text>
+      <switch checked="{{items.groupMsg}}" color="#2A7FFF" data-key="groupMsg" bindchange="onToggle" />
+    </view>
+    <view class="card-row">
+      <text class="row-text">系统通知</text>
+      <switch checked="{{items.system}}" color="#2A7FFF" data-key="system" bindchange="onToggle" />
+    </view>
+  </view>
+
+  <!-- 免打扰 -->
+  <view class="section-label">免打扰时段</view>
+  <view class="card-group">
+    <view class="card-row">
+      <text class="row-text">开启免打扰</text>
+      <switch checked="{{items.dnd}}" color="#2A7FFF" data-key="dnd" bindchange="onToggle" />
+    </view>
+    <view wx:if="{{items.dnd}}" class="card-row" bindtap="onPickDndTime">
+      <text class="row-text">免打扰时段</text>
+      <text class="row-value">23:00 - 07:00</text>
+    </view>
+  </view>
+</view>

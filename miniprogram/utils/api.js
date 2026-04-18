@@ -411,7 +411,29 @@ module.exports = {
           category === "recommend"
             ? mockData.newsList
             : mockData.newsList.filter((item) => item.category === category);
-        return paginate(list, page);
+        const result = paginate(list, page);
+        // === STEP 1.4 修改开始：为推荐流数据追加新字段 ===
+        const zoneNames = ["中芯国际专区", "华虹半导体专区", "长鑫存储专区", "CMP技术专区", "工艺工程师专区", "校园求职专区", "晶圆茶水间", "EDA专区", "先进封装专区", "供应链专区"];
+        const contentTypes = ["discuss", "news", "qa", "interview", "paper", "recruit", "demand", "chat"];
+        const roles = ["工艺工程师", "设备工程师", "EDA工程师", "良率分析师", "封测工程师", "HR", "采购经理", "在校学生", "技术总监"];
+        const experiences = ["应届", "1年", "3年", "5年", "8年", "10年+"];
+        const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        result.data = result.data.map((item) => ({
+          ...item,
+          zoneName: pick(zoneNames),
+          contentType: pick(contentTypes),
+          isAnonymous: Math.random() < 0.15,
+          author: {
+            name: item.source || "芯社区用户",
+            avatarText: (item.source || "U").charAt(0),
+            avatarBg: "#dce8ff",
+            avatarColor: "#165dc6",
+            role: pick(roles),
+            experience: pick(experiences)
+          }
+        }));
+        // === STEP 1.4 修改结束 ===
+        return result;
       }
     );
   },
@@ -505,11 +527,24 @@ module.exports = {
       },
       async () => {
         await delay(120);
+        // Step 2.4: resolve zoneName from zoneId for mock mode
+        let zoneName = "";
+        if (data.zoneId) {
+          try {
+            const zoneData = require("./mock-zone-data");
+            const allZones = Object.values(zoneData.zonesByCategory || {}).flat();
+            const found = allZones.find(z => z.zoneId === data.zoneId);
+            if (found) zoneName = found.zoneName;
+            if (data.zoneId === "tea-room") zoneName = "晶圆茶水间";
+          } catch (e) {}
+        }
         return {
           success: true,
           data: {
             id: `post_${Date.now()}`,
             ...data,
+            zoneName,
+            isAnonymous: !!data.isAnonymous,
           },
         };
       }
@@ -1056,6 +1091,82 @@ module.exports = {
           data: mapping[normalizedType] || [],
           hasMore: false,
         };
+      }
+    );
+  },
+
+  // ── Step 2.5：Zone API methods ──
+  async getTeaRoomInfo() {
+    return execute(
+      async () => {
+        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "getZoneDetail", zoneId: "tea-room" } });
+        return res.result;
+      },
+      async () => {
+        await delay(100);
+        const zoneData = require("./mock-zone-data");
+        const allZones = Object.values(zoneData.zonesByCategory || {}).flat();
+        return { zoneName: "晶圆茶水间", memberCount: 50000, todayPostCount: 320, totalPostCount: 18500 };
+      }
+    );
+  },
+
+  async getUserZones() {
+    return execute(
+      async () => {
+        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "getUserZones" } });
+        return res.result;
+      },
+      async () => {
+        await delay(100);
+        return { zones: require("./mock-zone-data").myZones };
+      }
+    );
+  },
+
+  async getZoneListByCategory(category, page = 1, size = 20) {
+    return execute(
+      async () => {
+        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "getZoneList", category, page, size } });
+        return res.result;
+      },
+      async () => {
+        await delay(100);
+        const zoneData = require("./mock-zone-data");
+        const list = (zoneData.zonesByCategory[category] || []).map(z => ({
+          zoneId: z.zoneId,
+          zoneName: z.zoneName,
+          memberCount: typeof z.memberCount === "string" ? 0 : z.memberCount,
+          todayPosts: z.todayPosts || 0,
+          isJoined: z.isJoined || false,
+        }));
+        return { zones: list, total: list.length, page, size };
+      }
+    );
+  },
+
+  async joinZone(zoneId) {
+    return execute(
+      async () => {
+        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "joinZone", zoneId } });
+        return res.result;
+      },
+      async () => {
+        await delay(120);
+        return { success: true, message: "加入成功" };
+      }
+    );
+  },
+
+  async leaveZone(zoneId) {
+    return execute(
+      async () => {
+        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "leaveZone", zoneId } });
+        return res.result;
+      },
+      async () => {
+        await delay(120);
+        return { success: true, message: "退出成功" };
       }
     );
   },

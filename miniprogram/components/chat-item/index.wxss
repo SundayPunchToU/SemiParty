@@ -32,6 +32,25 @@
   font-weight: 700;
 }
 
+/* === STEP 1.6 修改开始：角色标签样式 === */
+.chat-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-role-tag {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #999999;
+  background: #2A2A3E;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+}
+/* === STEP 1.6 修改结束 === */
+
 .chat-time {
   font-size: 20rpx;
   color: var(--color-text-secondary);

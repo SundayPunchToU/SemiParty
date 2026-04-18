@@ -1,53 +1,174 @@
-<view class="page-shell">
-  <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
-    <view class="custom-topbar" style="min-height: {{capsuleHeight}}px;">
-      <view class="brand">{{brandName}}</view>
+<view class="page-profile">
+  <!-- 顶部导航 -->
+  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
+    <view class="nav-inner" style="min-height: {{capsuleHeight}}px;">
+      <view class="brand">芯圈 SemiParty</view>
+      <view class="nav-right" bindtap="goSettings">⚙️</view>
     </view>
   </view>
 
-  <view wx:if="{{profile}}" class="profile-card">
-    <view class="avatar-circle profile-avatar">{{profile.avatarText}}</view>
-    <view class="profile-name">{{profile.name}}</view>
-    <view class="profile-title">{{profile.title}}</view>
-    <view class="status-pill" bindtap="handleStatusChange" style="background: {{statusConfig.bg}}; color: {{statusConfig.color}};">
-      <text class="status-dot" style="background: {{statusConfig.dot}};"></text>
-      {{statusConfig.label}}
+  <!-- ① 个人信息卡片 -->
+  <view class="profile-card">
+    <view class="card-bg"></view>
+    <view class="card-content">
+      <view class="avatar-wrap">
+        <view class="avatar">{{profile.nickname.slice(0, 1)}}</view>
+      </view>
+      <view class="profile-name">{{profile.nickname}}</view>
+      <view class="profile-role">{{profile.role}} · {{profile.company}} · {{profile.experience}}</view>
+      <view class="profile-bio">{{profile.bio}}</view>
+      <!-- 徽章 -->
+      <view class="badge-row">
+        <view wx:for="{{profile.badges}}" wx:key="id" class="badge-chip">
+          <text>{{item.icon}}</text>
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+      <view class="edit-btn" bindtap="goEditProfile">编辑资料</view>
     </view>
   </view>
 
-  <view wx:if="{{profile}}" class="stat-grid">
-    <view class="stat-card">
-      <view class="stat-number">{{profile.stats.posts}}</view>
-      <view class="stat-label">发帖</view>
+  <!-- ② 数据统计 -->
+  <view class="stat-row">
+    <view class="stat-item" data-tab="posts" bindtap="onStatTap">
+      <view class="stat-num">{{formatCount(profile.stats.postCount)}}</view>
+      <view class="stat-label">帖子</view>
     </view>
-    <view class="stat-card">
-      <view class="stat-number">{{profile.stats.likes}}</view>
-      <view class="stat-label">获赞</view>
+    <view class="stat-item" data-tab="followers" bindtap="onStatTap">
+      <view class="stat-num">{{formatCount(profile.stats.followerCount)}}</view>
+      <view class="stat-label">粉丝</view>
     </view>
-    <view class="stat-card">
-      <view class="stat-number">{{profile.stats.following}}</view>
+    <view class="stat-item" data-tab="following" bindtap="onStatTap">
+      <view class="stat-num">{{formatCount(profile.stats.followingCount)}}</view>
       <view class="stat-label">关注</view>
     </view>
-  </view>
-
-  <view wx:for="{{menuGroups}}" wx:key="title" class="menu-group">
-    <view class="menu-title">{{item.title}}</view>
-    <view class="menu-list">
-      <view
-        wx:for="{{item.items}}"
-        wx:for-item="menu"
-        wx:key="id"
-        class="menu-item"
-        data-name="{{menu.name}}"
-        bindtap="handleMenuTap"
-      >
-        <view class="menu-icon" style="background: {{menu.bg}}; color: {{menu.color}};">{{menu.icon}}</view>
-        <view class="menu-content">
-          <view class="menu-name">{{menu.name}}</view>
-          <view class="menu-desc">{{menu.desc}}</view>
-        </view>
-        <view class="menu-arrow">></view>
-      </view>
+    <view class="stat-item">
+      <view class="stat-num">{{formatCount(profile.stats.likeReceivedCount)}}</view>
+      <view class="stat-label">获赞</view>
+    </view>
+    <view class="stat-item" data-tab="favorites" bindtap="onStatTap">
+      <view class="stat-num">{{formatCount(profile.stats.favoriteCount)}}</view>
+      <view class="stat-label">收藏</view>
     </view>
   </view>
+
+  <!-- ③ 我加入的专区 -->
+  <view class="section-block">
+    <view class="section-header">
+      <view class="section-title">我的专区</view>
+      <view class="section-link" bindtap="goCommunity">全部 ></view>
+    </view>
+    <scroll-view class="zone-scroll" scroll-x="true" show-scrollbar="{{false}}">
+      <view class="zone-chips">
+        <view
+          wx:for="{{profile.joinedZones}}"
+          wx:key="zoneId"
+          class="zone-chip"
+          data-id="{{item.zoneId}}"
+          bindtap="onZoneTap"
+        >{{item.name}}</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- ④ 内容 Tab -->
+  <view class="content-section">
+    <view class="content-tabs">
+      <view
+        wx:for="{{contentTabs}}"
+        wx:key="key"
+        class="content-tab {{activeTab === item.key ? 'is-active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onTabChange"
+      >{{item.label}}</view>
+    </view>
+
+    <!-- 我的帖子 -->
+    <view wx:if="{{activeTab === 'posts'}}" class="tab-content">
+      <block wx:for="{{myPosts}}" wx:key="postId">
+        <view class="post-card" data-id="{{item.postId}}" bindtap="onPostTap">
+          <view class="post-card-header">
+            <view class="post-card-title">
+              <text wx:if="{{item.isAnonymous}}">[匿名] </text>{{item.title}}
+            </view>
+            <text class="post-card-time">{{item.createdAt}}</text>
+          </view>
+          <view class="post-card-meta">
+            <text>{{item.zoneName}} · {{item.contentTypeLabel}}</text>
+            <text wx:if="{{item.isBest}}" class="best-badge">🏆 精华</text>
+          </view>
+          <view class="post-card-stats">
+            <text>👍 {{item.likeCount}}</text>
+            <text>💬 {{item.commentCount}}</text>
+            <text>👁 {{item.viewCount}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- 我的收藏 -->
+    <view wx:if="{{activeTab === 'favorites'}}" class="tab-content">
+      <block wx:for="{{myFavorites}}" wx:key="postId">
+        <view class="fav-card" data-id="{{item.postId}}" bindtap="onPostTap">
+          <view class="fav-title">{{item.title}}</view>
+          <view class="fav-meta">
+            <text>{{item.author.nickname}} · {{item.zoneName}}</text>
+          </view>
+          <view class="fav-stats">
+            <text>👍 {{item.likeCount}}</text>
+            <text>💬 {{item.commentCount}}</text>
+            <text>收藏于 {{item.savedAt}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- 浏览历史 -->
+    <view wx:if="{{activeTab === 'history'}}" class="tab-content">
+      <view class="history-clear" bindtap="clearHistory">清空历史</view>
+      <block wx:for="{{myHistory}}" wx:key="postId">
+        <view class="history-card" data-id="{{item.postId}}" bindtap="onPostTap">
+          <view class="history-title">{{item.title}}</view>
+          <view class="history-meta">
+            <text>{{item.zoneName}}</text>
+            <text class="history-time">{{item.viewedAt}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <!-- ⑤ 功能入口 -->
+  <view class="menu-section">
+    <view class="menu-card">
+      <view class="menu-row" bindtap="goFollowList" data-type="following">
+        <text class="menu-emoji">👥</text>
+        <text class="menu-text">关注/粉丝</text>
+        <text class="menu-arrow">></text>
+      </view>
+      <view class="menu-row" bindtap="handleMenuTap" data-name="我的草稿">
+        <text class="menu-emoji">📝</text>
+        <text class="menu-text">我的草稿</text>
+        <text class="menu-arrow">></text>
+      </view>
+      <view class="menu-row" bindtap="goSettings">
+        <text class="menu-emoji">🔔</text>
+        <text class="menu-text">消息设置</text>
+        <text class="menu-arrow">></text>
+      </view>
+      <view class="menu-row" bindtap="handleMenuTap" data-name="意见反馈">
+        <text class="menu-emoji">💬</text>
+        <text class="menu-text">意见反馈</text>
+        <text class="menu-arrow">></text>
+      </view>
+      <view class="menu-row" bindtap="handleMenuTap" data-name="关于我们">
+        <text class="menu-emoji">ℹ️</text>
+        <text class="menu-text">关于我们</text>
+        <text class="menu-arrow">></text>
+      </view>
+    </view>
+    <view class="logout-card" bindtap="handleLogout">退出登录</view>
+  </view>
+
+  <view style="height: 120rpx;"></view>
 </view>

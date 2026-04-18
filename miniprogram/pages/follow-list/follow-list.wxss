@@ -1,0 +1,95 @@
+.page-follow {
+  min-height: 100vh;
+  background: #1A1A2E;
+}
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #1A1A2E;
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16rpx;
+  height: 88rpx;
+}
+.back-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: #fff;
+}
+.nav-tabs {
+  display: flex;
+  gap: 48rpx;
+}
+.nav-tab {
+  font-size: 30rpx;
+  color: #888;
+  font-weight: 600;
+}
+.nav-tab.is-active {
+  color: #fff;
+}
+.list-wrap {
+  padding: 0 24rpx;
+}
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #222;
+}
+.row-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: #2A7FFF;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.row-info {
+  flex: 1;
+  min-width: 0;
+}
+.row-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #fff;
+}
+.row-detail {
+  font-size: 24rpx;
+  color: #888;
+  margin-top: 4rpx;
+}
+.follow-btn {
+  padding: 10rpx 28rpx;
+  border: 2rpx solid #2A7FFF;
+  border-radius: 24rpx;
+  color: #2A7FFF;
+  font-size: 24rpx;
+  flex-shrink: 0;
+}
+.follow-btn.is-followed {
+  border-color: #555;
+  color: #888;
+  background: transparent;
+}
+.follow-btn.is-mutual {
+  border-color: transparent;
+  color: #fff;
+  background: #2A7FFF;
+}

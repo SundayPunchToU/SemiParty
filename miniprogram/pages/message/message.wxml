@@ -19,10 +19,178 @@
     </view>
   </view>
 
-  <view class="chat-stream">
-    <block wx:for="{{chatList}}" wx:key="id">
-      <chat-item item="{{item}}" bind:itemtap="openChat" />
-      <view wx:if="{{index !== chatList.length - 1}}" class="divider"></view>
-    </block>
-  </view>
+  <!-- === STEP 1.6 修改开始：互动 Tab 内容 === -->
+  <!-- === STEP 1.6 增强 II 修改开始：互动 Tab 增加左滑操作 === -->
+  <block wx:if="{{activeTab === 'interaction'}}">
+    <view class="interaction-stream">
+      <view
+        wx:for="{{interactionList}}"
+        wx:key="id"
+        class="swipe-wrapper"
+      >
+        <view class="swipe-actions swipe-actions-3">
+          <view class="swipe-btn swipe-btn-read" data-id="{{item.id}}" data-action="read" bindtap="onSwipeBtnTap">{{item.isRead ? '未读' : '已读'}}</view>
+          <view class="swipe-btn swipe-btn-pin" data-id="{{item.id}}" data-action="pin" bindtap="onSwipeBtnTap">{{item.isPinned ? '取消' : '置顶'}}</view>
+          <view class="swipe-btn swipe-btn-delete" data-id="{{item.id}}" data-action="delete" bindtap="onSwipeBtnTap">删除</view>
+        </view>
+        <view
+          class="swipe-content interaction-item {{item.isPinned ? 'is-pinned' : ''}}"
+          style="transform: translateX({{swipeXMap[item.id] || 0}}rpx);"
+          data-id="{{item.id}}"
+          data-title="{{item.targetTitle}}"
+          bindtouchstart="_handleTouchStart"
+          bindtouchmove="_handleTouchMove"
+          bindtouchend="_handleTouchEnd"
+          bindtap="onInteractionTap"
+          bindlongpress="onLongPressItem"
+        >
+          <view class="interaction-avatar">{{item.user.nickname[0]}}</view>
+          <view class="interaction-body">
+            <view class="interaction-top">
+              <text class="interaction-nickname">{{item.user.nickname}}</text>
+              <text class="interaction-action">{{item.content}}</text>
+            </view>
+            <view wx:if="{{item.targetTitle}}" class="interaction-target">《{{item.targetTitle}}》</view>
+            <view class="interaction-time">{{item.time}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+  <!-- === STEP 1.6 增强 II 修改结束 ===
+  === STEP 1.6 修改结束 === -->
+
+  <!-- === STEP 1.6 增强 修改开始：私聊 Tab === -->
+  <!-- === STEP 1.6 增强 II 修改开始：私聊 Tab 增加左滑操作 === -->
+  <block wx:elif="{{activeTab === 'private'}}">
+    <view class="msg-list">
+      <view
+        wx:for="{{privateList}}"
+        wx:key="chatId"
+        class="swipe-wrapper"
+      >
+        <view class="swipe-actions swipe-actions-3">
+          <view class="swipe-btn swipe-btn-read" data-id="{{item.chatId}}" data-action="read" bindtap="onSwipeBtnTap">{{item.unreadCount > 0 ? '已读' : '未读'}}</view>
+          <view class="swipe-btn swipe-btn-pin" data-id="{{item.chatId}}" data-action="pin" bindtap="onSwipeBtnTap">{{item.isPinned ? '取消' : '置顶'}}</view>
+          <view class="swipe-btn swipe-btn-delete" data-id="{{item.chatId}}" data-action="delete" bindtap="onSwipeBtnTap">删除</view>
+        </view>
+        <view
+          class="swipe-content msg-item {{item.isPinned ? 'is-pinned' : ''}}"
+          style="transform: translateX({{swipeXMap[item.chatId] || 0}}rpx);"
+          data-id="{{item.chatId}}"
+          data-chatid="{{item.chatId}}"
+          bindtouchstart="_handleTouchStart"
+          bindtouchmove="_handleTouchMove"
+          bindtouchend="_handleTouchEnd"
+          bindtap="onPrivateTap"
+          bindlongpress="onLongPressItem"
+        >
+          <view class="msg-avatar-circle">{{item.user.nickname[0]}}</view>
+          <view class="msg-body">
+            <view class="msg-top">
+              <view class="msg-name-row">
+                <text class="msg-name">{{item.user.nickname}}</text>
+                <text wx:if="{{item.user.role}}" class="msg-role-tag">{{item.user.role}}</text>
+              </view>
+              <text class="msg-time">{{item.lastMessageTime}}</text>
+            </view>
+            <view class="msg-bottom">
+              <text class="msg-text">{{item.lastMessage}}</text>
+              <view wx:if="{{item.unreadCount > 0}}" class="msg-badge">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+  <!-- === STEP 1.6 增强 II 修改结束 ===
+  === STEP 1.6 增强 修改结束 === -->
+
+  <!-- === STEP 1.6 增强 修改开始：群组 Tab === -->
+  <!-- === STEP 1.6 增强 II 修改开始：群组 Tab 增加左滑操作 === -->
+  <block wx:elif="{{activeTab === 'group'}}">
+    <view class="msg-list">
+      <view
+        wx:for="{{groupList}}"
+        wx:key="groupId"
+        class="swipe-wrapper"
+      >
+        <view class="swipe-actions swipe-actions-3">
+          <view class="swipe-btn swipe-btn-read" data-id="{{item.groupId}}" data-action="read" bindtap="onSwipeBtnTap">{{item.unreadCount > 0 ? '已读' : '未读'}}</view>
+          <view class="swipe-btn swipe-btn-pin" data-id="{{item.groupId}}" data-action="pin" bindtap="onSwipeBtnTap">{{item.isPinned ? '取消' : '置顶'}}</view>
+          <view class="swipe-btn swipe-btn-delete" data-id="{{item.groupId}}" data-action="delete" bindtap="onSwipeBtnTap">删除</view>
+        </view>
+        <view
+          class="swipe-content msg-item {{item.isPinned ? 'is-pinned' : ''}}"
+          style="transform: translateX({{swipeXMap[item.groupId] || 0}}rpx);"
+          data-id="{{item.groupId}}"
+          data-groupid="{{item.groupId}}"
+          bindtouchstart="_handleTouchStart"
+          bindtouchmove="_handleTouchMove"
+          bindtouchend="_handleTouchEnd"
+          bindtap="onGroupTap"
+          bindlongpress="onLongPressItem"
+        >
+          <view class="msg-avatar-rounded">{{item.groupName[0]}}{{item.groupName[1]}}</view>
+          <view class="msg-body">
+            <view class="msg-top">
+              <view class="msg-name-row">
+                <text class="msg-name">{{item.groupName}}</text>
+                <text class="msg-member-count">{{item.memberCount}}人</text>
+              </view>
+              <text class="msg-time">{{item.lastMessageTime}}</text>
+            </view>
+            <view class="msg-bottom">
+              <text class="msg-text">{{item.lastSender}}: {{item.lastMessage}}</text>
+              <view wx:if="{{item.unreadCount > 0}}" class="msg-badge">{{item.unreadCount > 99 ? '99+' : item.unreadCount}}</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+  <!-- === STEP 1.6 增强 II 修改结束 ===
+  === STEP 1.6 增强 修改结束 === -->
+
+  <!-- === STEP 1.6 增强 修改开始：通知 Tab === -->
+  <!-- === STEP 1.6 增强 II 修改开始：通知 Tab 增加左滑操作（2按钮） === -->
+  <block wx:elif="{{activeTab === 'system'}}">
+    <view class="msg-list">
+      <view
+        wx:for="{{notificationList}}"
+        wx:key="id"
+        class="swipe-wrapper"
+      >
+        <view class="swipe-actions swipe-actions-2">
+          <view class="swipe-btn swipe-btn-read" data-id="{{item.id}}" data-action="read" bindtap="onSwipeBtnTap">{{item.isRead ? '未读' : '已读'}}</view>
+          <view class="swipe-btn swipe-btn-delete" data-id="{{item.id}}" data-action="delete" bindtap="onSwipeBtnTap">删除</view>
+        </view>
+        <view
+          class="swipe-content notif-item {{item.isRead ? 'is-read' : ''}}"
+          style="transform: translateX({{swipeXMap[item.id] || 0}}rpx);"
+          data-id="{{item.id}}"
+          data-notifid="{{item.id}}"
+          bindtouchstart="_handleTouchStart"
+          bindtouchmove="_handleTouchMove"
+          bindtouchend="_handleTouchEnd"
+          bindtap="onNotifTap"
+          bindlongpress="onLongPressItem"
+        >
+          <view class="notif-icon" style="background: {{item.typeBg}};">{{item.typeEmoji}}</view>
+          <view class="notif-body">
+            <view class="notif-top">
+              <view class="notif-title-row">
+                <view wx:if="{{!item.isRead}}" class="notif-unread-dot"></view>
+                <text class="notif-title">{{item.title}}</text>
+              </view>
+              <text class="notif-time">{{item.time}}</text>
+            </view>
+            <view class="notif-content">{{item.content}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+  <!-- === STEP 1.6 增强 II 修改结束 ===
+  === STEP 1.6 增强 修改结束 === -->
 </view>

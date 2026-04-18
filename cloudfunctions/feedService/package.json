@@ -1,0 +1,9 @@
+{
+  "name": "feedService",
+  "version": "1.0.0",
+  "description": "SemiParty feed service - recommend feed, following feed, related posts",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

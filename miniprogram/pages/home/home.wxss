@@ -7,49 +7,67 @@
   margin-bottom: 8rpx;
 }
 
-.job-banner {
+/* === STEP 1.3 修改开始：公告条 === */
+.notice-bar {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  margin-top: 20rpx;
-  padding: 20rpx 24rpx;
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-left: 3rpx solid var(--color-primary);
+  height: 72rpx;
+  padding: 0 24rpx;
+  background: #2A2A3E;
 }
+.notice-icon { font-size: 28rpx; margin-right: 12rpx; flex-shrink: 0; }
+.notice-text { flex: 1; font-size: 24rpx; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notice-close { flex-shrink: 0; font-size: 24rpx; color: var(--color-text-tertiary); padding: 8rpx; margin-left: 12rpx; }
+/* === STEP 1.3 修改结束 === */
 
-.job-banner-icon {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: var(--radius-md);
-  background: var(--color-primary-soft);
-  color: var(--color-primary-text);
+/* === STEP 1.3 修改开始：运营横幅轮播 === */
+.banner-swiper {
+  margin: 16rpx 16rpx 0;
+  height: 240rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+.banner-slide {
+  width: 100%;
+  height: 240rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28rpx;
+  border-radius: 24rpx;
 }
-
-.job-banner-body {
-  flex: 1;
-  color: var(--color-text-primary);
-}
-
-.job-banner-title {
+.banner-text {
+  color: #FFFFFF;
   font-size: var(--font-md);
   font-weight: 700;
 }
+/* === STEP 1.3 修改结束 === */
 
-.job-banner-subtitle {
-  margin-top: 4rpx;
-  font-size: var(--font-xs);
-  color: var(--color-text-secondary);
+/* === STEP 1.3 修改开始：新快捷入口栏 === */
+.shortcut-row {
+  display: flex;
+  justify-content: space-around;
+  padding: 24rpx 0;
 }
-
-.quick-nav-wrap {
-  margin-top: 20rpx;
+.shortcut-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
 }
+.shortcut-icon {
+  width: 80rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  text-align: center;
+  background: rgba(42, 127, 255, 0.15);
+  border-radius: 50%;
+  font-size: 36rpx;
+}
+.shortcut-label {
+  font-size: 24rpx;
+  color: #AAAAAA;
+}
+/* === STEP 1.3 修改结束 === */
 
 .tab-scroll {
   margin: 16rpx 0 16rpx;
@@ -85,3 +103,74 @@
 .news-stream {
   margin-top: 8rpx;
 }
+
+/* === STEP 1.2 修改开始：Swiper 内容区样式 === */
+.content-swiper {
+  height: calc(100vh - 492rpx);
+}
+
+.swiper-item {
+  overflow-y: auto;
+  height: 100%;
+  padding-bottom: 60rpx;
+  box-sizing: border-box;
+}
+
+/* 空态样式 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 180rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 24rpx;
+}
+
+.empty-text {
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
+  margin-bottom: 40rpx;
+}
+
+.empty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 48rpx;
+  background: var(--color-primary);
+  color: #FFFFFF;
+  font-size: var(--font-base);
+  font-weight: 500;
+  border-radius: 40rpx;
+}
+
+/* 茶水间话题标签 */
+.tearoom-topic-row {
+  display: flex;
+  gap: 16rpx;
+  padding: 20rpx 0;
+  white-space: nowrap;
+}
+
+.tearoom-topic-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 10rpx 24rpx;
+  background: #2A2A3E;
+  color: #CCCCCC;
+  font-size: var(--font-sm);
+  border-radius: 32rpx;
+  white-space: nowrap;
+}
+
+.tearoom-topic-chip.is-active {
+  background: var(--color-primary);
+  color: #FFFFFF;
+}
+
+/* 茶水间浮动发帖按钮已移至底部导航栏中央 */
+/* === STEP 1.2 修改结束 === */

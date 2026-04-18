@@ -1,9 +1,11 @@
 module.exports = {
   homeTabs: [
     { key: "recommend", label: "推荐" },
-    { key: "industry", label: "行业新闻" },
-    { key: "knowledge", label: "知识分享" },
-    { key: "company", label: "企业" },
+    // === STEP 1.2 修改开始：Tab 文字改造 ===
+    { key: "industry", label: "资讯" },
+    { key: "knowledge", label: "关注" },
+    { key: "company", label: "茶水间" },
+    // === STEP 1.2 修改结束 ===
   ],
   communityTabs: [
     { key: "hot", label: "热门" },
@@ -11,11 +13,14 @@ module.exports = {
     { key: "tech", label: "技术讨论" },
     { key: "career", label: "职场吐槽" },
   ],
+  // === STEP 1.6 修改开始：重排 Tab 顺序 + 新增互动 Tab ===
   messageTabs: [
+    { key: "interaction", label: "互动" },
     { key: "private", label: "私聊" },
     { key: "group", label: "群组" },
-    { key: "system", label: "系统通知" },
+    { key: "system", label: "通知" },
   ],
+  // === STEP 1.6 修改结束 ===
   jobMarketModes: [
     { key: "job", label: "找工作" },
     { key: "talent", label: "找人才" },

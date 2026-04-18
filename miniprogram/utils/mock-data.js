@@ -263,7 +263,10 @@ const chatList = [
     avatarShape: "circle",
     lastMessage: "您好，看到您的简历对 PE 岗位很匹配，方便聊一下吗？",
     time: "10:32",
-    unread: 1
+    unread: 1,
+    // === STEP 1.6 修改开始：私聊联系人追加 role 字段 ===
+    role: "HR",
+    // === STEP 1.6 修改结束 ===
   },
   {
     id: "chat_002",
@@ -287,7 +290,10 @@ const chatList = [
     avatarShape: "rounded",
     lastMessage: "华为海思有个 7nm 设计岗位，薪资 open，感兴趣吗？",
     time: "昨天",
-    unread: 0
+    unread: 0,
+    // === STEP 1.6 修改开始：私聊联系人追加 role 字段 ===
+    role: "猎头",
+    // === STEP 1.6 修改结束 ===
   },
   {
     id: "chat_004",
@@ -311,7 +317,10 @@ const chatList = [
     avatarShape: "circle",
     lastMessage: "那篇 FinFET 的 paper 我发你邮箱了，注意看里面的 parasitic 分析。",
     time: "周一",
-    unread: 0
+    unread: 0,
+    // === STEP 1.6 修改开始：私聊联系人追加 role 字段 ===
+    role: "研发工程师",
+    // === STEP 1.6 修改结束 ===
   },
   {
     id: "chat_006",

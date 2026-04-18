@@ -1,0 +1,39 @@
+<view class="page-sub">
+  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="nav-inner">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="nav-title">隐私设置</view>
+      <view style="width: 56rpx;"></view>
+    </view>
+  </view>
+
+  <view class="card-group">
+    <view class="card-row">
+      <text class="row-text">允许陌生人私信</text>
+      <switch checked="{{items.allowStrangerMsg}}" color="#2A7FFF" data-key="allowStrangerMsg" bindchange="onToggle" />
+    </view>
+    <view class="card-row">
+      <text class="row-text">显示在线状态</text>
+      <switch checked="{{items.showOnline}}" color="#2A7FFF" data-key="showOnline" bindchange="onToggle" />
+    </view>
+    <view class="card-row">
+      <text class="row-text">允许推荐我给其他用户</text>
+      <switch checked="{{items.allowRecommend}}" color="#2A7FFF" data-key="allowRecommend" bindchange="onToggle" />
+    </view>
+    <view class="card-row">
+      <text class="row-text">匿名帖子默认开启</text>
+      <switch checked="{{items.anonymousDefault}}" color="#2A7FFF" data-key="anonymousDefault" bindchange="onToggle" />
+    </view>
+    <view class="card-row">
+      <text class="row-text">浏览历史可被他人看到</text>
+      <switch checked="{{items.historyVisible}}" color="#2A7FFF" data-key="historyVisible" bindchange="onToggle" />
+    </view>
+  </view>
+
+  <view class="card-group" style="margin-top: 24rpx;">
+    <view class="card-row" bindtap="goBlockList">
+      <text class="row-text">黑名单管理</text>
+      <text class="row-arrow">></text>
+    </view>
+  </view>
+</view>

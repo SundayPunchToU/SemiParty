@@ -1,45 +1,235 @@
 <view class="inner-shell detail-shell">
+  <!-- 顶部导航栏（Step 1.7 不动） -->
   <view class="inner-top" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
     <view class="detail-nav">
       <view class="back-btn" bindtap="goBack">‹</view>
-      <view class="ghost-btn" data-name="分享" bindtap="handleAction">分享</view>
+      <view class="nav-zone-name" bindtap="onZoneTap">{{zoneName}}</view>
+      <view class="nav-right-btns">
+        <view class="ghost-btn" data-name="分享" bindtap="handleAction">分享</view>
+        <view class="ghost-btn" style="padding: 12rpx 14rpx;" data-name="更多" bindtap="handleAction">⋯</view>
+      </view>
     </view>
   </view>
 
   <view wx:if="{{post}}" class="author-card panel">
+    <!-- 内容类型标签（Step 1.7 不动） -->
+    <view class="content-type-tag" style="background: {{typeBg}}; color: {{typeColor}};">{{typeLabel}}</view>
+
+    <!-- 作者信息行（Step 1.7 不动） -->
     <view class="author-head">
-      <view class="avatar-circle author-avatar" style="background: {{post.author.avatarBg}}; color: {{post.author.avatarColor}};">
+      <view class="avatar-circle author-avatar" style="background: {{post.author.avatarBg}}; color: {{post.author.avatarColor}}; width: 72rpx; height: 72rpx; font-size: 28rpx;">
         {{post.author.avatarText}}
       </view>
       <view class="author-info">
-        <view class="author-name">{{post.author.name}}</view>
-        <view class="author-role">{{post.author.title}}</view>
+        <view class="author-name-row">
+          <text class="author-name">{{post.author.name}}</text>
+          <text wx:if="{{authorRole}}" class="author-role-text">· {{authorRole}}</text>
+          <text wx:if="{{authorExperience}}" class="author-exp-text">· {{authorExperience}}</text>
+        </view>
+        <view class="author-meta-row">
+          <text wx:if="{{postZoneName}}" class="meta-item">{{postZoneName}}</text>
+          <text wx:if="{{postZoneName && publishTime}}" class="meta-sep"> · </text>
+          <text wx:if="{{publishTime}}" class="meta-item">{{publishTime}}</text>
+          <text wx:if="{{publishTime}}" class="meta-sep"> · </text>
+          <text class="meta-item">{{viewCount}}阅读</text>
+        </view>
       </view>
-      <view class="follow-btn" data-name="关注" bindtap="handleAction">关注</view>
+      <view class="follow-btn" data-name="关注" bindtap="handleAction">+ 关注</view>
     </view>
 
+    <!-- 正文（不动） -->
     <view class="post-detail-content">{{post.content}}</view>
     <text class="tag tag-{{post.topic.type}}">{{post.topic.text}}</text>
     <view class="detail-meta-row">{{publishTime}} · {{post.likes}} 赞 · {{post.comments}} 评论</view>
-  </view>
 
-  <view class="comment-section">
-    <view class="section-title">评论</view>
-    <view wx:if="{{post.commentsList.length === 0}}" class="empty-note">还没有评论，抢个沙发。</view>
-    <view wx:for="{{post.commentsList}}" wx:key="id" class="comment-item">
-      <view class="avatar-circle comment-avatar" style="background: {{item.avatarBg}}; color: {{item.avatarColor}};">
-        {{item.avatarText}}
+    <!-- 正文图片区 -->
+    <view wx:if="{{post.images && post.images.length > 0}}" class="post-images-grid">
+      <view wx:for="{{post.images}}" wx:key="*this" class="post-image-item" data-url="{{item}}" data-index="{{index}}" bindtap="onPreviewImage">
+        <view class="image-placeholder">图片</view>
       </view>
-      <view class="comment-body">
-        <view class="comment-name">{{item.user}}</view>
-        <view class="comment-content">{{item.content}}</view>
-        <view class="comment-meta">{{item.time}} · {{item.likes}} 赞</view>
+    </view>
+
+    <!-- 附件区 -->
+    <view wx:if="{{postAttachments.length > 0}}" class="attachment-section">
+      <view class="attachment-title">📎 附件（{{postAttachments.length}}）</view>
+      <view wx:for="{{postAttachments}}" wx:key="fileId" class="attachment-item">
+        <view class="att-left">
+          <text class="att-icon">{{item.icon}}</text>
+          <view class="att-info">
+            <view class="att-name">{{item.fileName}}</view>
+            <view class="att-meta">{{item.fileSize}} · {{item.downloadCount}}次下载</view>
+          </view>
+        </view>
+        <view class="att-download-btn" data-fileid="{{item.fileId}}" bindtap="onDownloadAttachment">下载 ⬇</view>
       </view>
     </view>
   </view>
 
-  <view class="composer-bar">
-    <view class="composer-input">写下你的看法…</view>
-    <view class="composer-send" data-name="发送" bindtap="handleAction">发送</view>
+  <!-- 相关推荐（Step 1.7 不动） -->
+  <view class="related-section panel" wx:if="{{post}}">
+    <view class="related-title">相关推荐</view>
+    <view wx:for="{{relatedPosts}}" wx:key="id" class="related-item" data-id="{{item.id}}" bindtap="onRelatedPostTap">
+      <view class="related-item-title">{{item.title}}</view>
+      <view class="related-item-stats">
+        <text>💬{{item.commentCount}}</text>
+        <text style="margin-left: 16rpx;">👍{{item.likeCount}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分割线 -->
+  <view class="section-divider" wx:if="{{post}}"></view>
+
+  <!-- ===== 贴吧风格评论系统 ===== -->
+  <view class="tieba-comment-section" wx:if="{{post}}">
+    <!-- 评论区标题 -->
+    <view class="comment-header">
+      <view class="comment-header-left">评论 · {{totalCommentCount}}</view>
+      <view class="comment-header-right">
+        <text class="sort-btn {{commentSort === 'latest' ? 'sort-active' : ''}}" data-sort="latest" bindtap="onSortChange">最新</text>
+        <text class="sort-btn {{commentSort === 'hottest' ? 'sort-active' : ''}}" data-sort="hottest" bindtap="onSortChange">最热</text>
+      </view>
+    </view>
+
+    <!-- 主楼评论列表 -->
+    <view wx:for="{{commentList}}" wx:key="commentId" class="floor-comment" bindlongpress="onLongPressComment" data-commentid="{{item.commentId}}">
+
+      <!-- 系统评论特殊样式 -->
+      <block wx:if="{{item.isSystem}}">
+        <view class="system-comment">
+          <text>{{item.content}}</text>
+        </view>
+      </block>
+
+      <!-- 普通评论 -->
+      <block wx:else>
+        <!-- 楼号 -->
+        <view class="floor-number">#{{item.floor}}楼</view>
+
+        <!-- 作者行 -->
+        <view class="floor-author-row">
+          <view class="avatar-circle floor-avatar" style="background: #2A2A3E; color: #999; width: 72rpx; height: 72rpx; font-size: 26rpx; flex-shrink: 0;">
+            {{item.author.nickname.charAt(0)}}
+          </view>
+          <view class="floor-author-info">
+            <view class="floor-nickname-row">
+              <text class="floor-nickname">{{item.author.nickname}}</text>
+              <text wx:if="{{item.author.role}}" class="floor-role">· {{item.author.role}}</text>
+              <text wx:if="{{item.author.experience}}" class="floor-role">· {{item.author.experience}}</text>
+            </view>
+            <text class="floor-time">{{item.createdAt}}</text>
+          </view>
+        </view>
+
+        <!-- 内容区 -->
+        <view class="floor-content {{item.content.length > 120 && !expandedFloorContent[item.floor] ? 'collapsed' : ''}}">
+          <text class="floor-text">{{item.content}}</text>
+          <view wx:if="{{item.content.length > 120 && !expandedFloorContent[item.floor]}}" class="expand-btn" data-floor="{{item.floor}}" bindtap="toggleFloorContent">展开全文</view>
+          <view wx:if="{{item.content.length > 120 && expandedFloorContent[item.floor]}}" class="expand-btn" data-floor="{{item.floor}}" bindtap="toggleFloorContent">收起</view>
+        </view>
+
+        <!-- 评论附件 -->
+        <view wx:if="{{item.attachments && item.attachments.length > 0}}" class="floor-attachments">
+          <view wx:for="{{item.attachments}}" wx:for-item="att" wx:key="fileId" class="floor-att-item">
+            <text class="att-icon">{{att.icon}}</text>
+            <text class="floor-att-name">{{att.fileName}}</text>
+            <text class="floor-att-size">{{att.fileSize}}</text>
+          </view>
+        </view>
+
+        <!-- 评论图片 -->
+        <view wx:if="{{item.images && item.images.length > 0}}" class="floor-images">
+          <view wx:for="{{item.images}}" wx:key="*this" wx:if="{{index < 3}}" class="floor-img-item" data-url="{{item}}" bindtap="onCommentImageTap">
+            <view class="image-placeholder small">图片</view>
+            <view wx:if="{{index === 2 && item.images.length > 3}}" class="img-more-mask">+{{item.images.length - 3}}</view>
+          </view>
+        </view>
+
+        <!-- 互动栏 -->
+        <view class="floor-actions">
+          <view class="floor-action {{item.isLiked ? 'is-liked' : ''}}" data-idx="{{index}}" bindtap="onLikeComment">
+            <text>👍</text>
+            <text class="action-count">{{item.likeCount}}</text>
+          </view>
+          <view class="floor-action" data-nickname="{{item.author.nickname}}" data-commentid="{{item.commentId}}" bindtap="onReplyTo">
+            <text>💬</text>
+            <text class="action-count">{{item.replyCount}}</text>
+          </view>
+          <view class="floor-action" data-commentid="{{item.commentId}}" bindtap="onLongPressComment">
+            <text>分享</text>
+          </view>
+        </view>
+
+        <!-- 楼中楼回复区 -->
+        <view wx:if="{{item.replies && item.replies.length > 0}}" class="sub-replies">
+          <view wx:for="{{item.replies}}" wx:key="replyId" wx:if="{{!expandedComments[item.floor] ? index < 2 : true}}" class="sub-reply-item" data-cidx="{{index}}" data-ridx="{{index}}" bindtap="onTapReplyItem" bindlongpress="onLongPressReply">
+            <view class="sub-reply-content">
+              <text class="sub-reply-author">{{item.author.nickname}}</text>
+              <text wx:if="{{item.replyTo}}" class="sub-reply-to"> 回复 </text>
+              <text wx:if="{{item.replyTo}}" class="sub-reply-target">{{item.replyTo.nickname}}</text>
+              <text class="sub-reply-text">：{{item.content}}</text>
+            </view>
+            <view class="sub-reply-right">
+              <text class="sub-reply-like {{item.isLiked ? 'is-liked' : ''}}" data-cidx="{{index}}" data-ridx="{{index}}" catchtap="onLikeReply">👍 {{item.likeCount}}</text>
+            </view>
+            <view class="sub-reply-time">{{item.createdAt}}</view>
+          </view>
+
+          <!-- 展开/折叠楼中楼 -->
+          <view wx:if="{{item.replies.length > 3 && !expandedComments[item.floor]}}" class="sub-replies-more" data-floor="{{item.floor}}" bindtap="toggleReplies">
+            查看全部 {{item.replyCount}} 条回复 &gt;
+          </view>
+          <view wx:if="{{item.replies.length > 3 && expandedComments[item.floor]}}" class="sub-replies-more" data-floor="{{item.floor}}" bindtap="toggleReplies">
+            收起回复
+          </view>
+        </view>
+
+      </block>
+
+      <!-- 分割线 -->
+      <view class="floor-divider"></view>
+    </view>
+
+    <!-- 加载更多 -->
+    <view class="load-more-btn" bindtap="onLoadMoreComments">查看更多评论</view>
+  </view>
+
+  <!-- 底部留白（防止被吸底栏遮挡） -->
+  <view class="bottom-spacer"></view>
+  <view wx:if="{{inputExpanded}}" class="bottom-spacer"></view>
+
+  <!-- ===== 底部收起态操作栏 ===== -->
+  <view class="bottom-bar" wx:if="{{!inputExpanded}}">
+    <view class="bar-avatar avatar-circle" style="background: #2A2A3E; color: #999; width: 48rpx; height: 48rpx; font-size: 20rpx; flex-shrink: 0;">我</view>
+    <view class="bar-input-placeholder" bindtap="onInputFocus">
+      <text class="{{replyTarget ? 'replying-hint' : ''}}">{{replyTarget ? '回复 ' + replyTarget.nickname + '…' : '写评论…'}}</text>
+    </view>
+    <view class="bar-icons">
+      <view class="bar-icon-btn {{postLiked ? 'is-liked' : ''}}" bindtap="togglePostLike">👍</view>
+      <view class="bar-icon-btn {{postFavorited ? 'is-faved' : ''}}" bindtap="togglePostFavorite">⭐</view>
+      <view class="bar-icon-btn" bindtap="onSharePost">↗</view>
+    </view>
+  </view>
+
+  <!-- ===== 底部展开态评论面板 ===== -->
+  <view class="input-panel-mask" wx:if="{{inputExpanded}}" bindtap="onCancelInput"></view>
+  <view class="input-panel {{inputExpanded ? 'panel-show' : ''}}">
+    <view class="panel-header">
+      <text class="panel-reply-target" wx:if="{{replyTarget}}">回复 {{replyTarget.nickname}}</text>
+      <text class="panel-reply-target" wx:else>评论</text>
+      <text class="panel-cancel" bindtap="onCancelInput">取消</text>
+    </view>
+    <view class="panel-textarea-wrap">
+      <textarea class="panel-textarea" value="{{inputValue}}" bindinput="onInputChange" bindblur="onInputBlur" focus="{{inputExpanded}}" maxlength="500" placeholder="写下你的看法…" auto-height="{{false}}" />
+    </view>
+    <view class="panel-toolbar">
+      <view class="toolbar-left">
+        <text class="tool-btn" bindtap="handleAction" data-name="选择图片">📷</text>
+        <text class="tool-btn" bindtap="handleAction" data-name="选择附件">📎</text>
+        <text class="tool-btn" bindtap="handleAction" data-name="打开表情面板">😊</text>
+        <text class="tool-btn anon-btn {{isAnonymous ? 'anon-active' : ''}}" bindtap="toggleAnonymous">匿名{{isAnonymous ? ' ✓' : ''}}</text>
+      </view>
+      <view class="publish-btn {{inputValue.trim() ? 'publish-active' : ''}}" bindtap="onPublishComment">发布</view>
+    </view>
   </view>
 </view>

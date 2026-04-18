@@ -1,93 +1,129 @@
-const api = require("../../utils/api");
-const { profileStatuses } = require("../../utils/constants");
 const { getNavMetrics } = require("../../utils/util");
+const { myProfile, myPosts, myFavorites, myViewHistory, CONTENT_TYPE_MAP } = require("../../mock/profileData");
 
-const menuGroups = [
-  {
-    title: "求职管理",
-    items: [
-      { id: "resume", icon: "R", bg: "#dce8ff", color: "#165dc6", name: "我的简历", desc: "在线简历 · 已完善 85%" },
-      { id: "delivery", icon: "D", bg: "#ddf5ee", color: "#157658", name: "投递记录", desc: "3 个岗位进行中" },
-      { id: "viewed", icon: "W", bg: "#ecebff", color: "#5951d9", name: "谁看过我", desc: "12 位 HR/猎头近 7 天浏览" },
-      { id: "status", icon: "S", bg: "#fdf0d8", color: "#9d6615", name: "求职状态", desc: "当前：在看机会" }
-    ]
-  },
-  {
-    title: "社区相关",
-    items: [
-      { id: "favorite", icon: "C", bg: "#353430", color: "#f7f4ef", name: "我的收藏", desc: "文章 · 帖子 · 岗位" },
-      { id: "history", icon: "H", bg: "#353430", color: "#f7f4ef", name: "浏览历史", desc: "最近读过与浏览内容" }
-    ]
-  }
+const CONTENT_TABS = [
+  { key: "posts", label: "我的帖子" },
+  { key: "favorites", label: "我的收藏" },
+  { key: "history", label: "浏览历史" },
 ];
 
 Page({
   data: {
     statusBarHeight: 24,
-    brandName: "芯圈 SemiParty",
-    profile: null,
-    statusConfig: null,
-    menuGroups
+    navCapsuleInsetRight: 12,
+    capsuleHeight: 44,
+    profile: myProfile,
+    contentTabs: CONTENT_TABS,
+    activeTab: "posts",
+    myPosts: [],
+    myFavorites: [],
+    myHistory: [],
   },
 
-  async onLoad() {
-    this.setData({
-      ...getNavMetrics()
-    });
+  onLoad() {
+    this.setData({ ...getNavMetrics() });
+    this._loadTabData("posts");
+  },
 
-    try {
-      const profile = await api.getUserProfile();
-      this.setData({
-        profile,
-        statusConfig: this.getStatusConfig(profile.jobStatus)
-      });
-    } catch (error) {
-      console.error("load profile failed", error);
-      wx.showToast({
-        title: error.message || "个人信息加载失败",
-        icon: "none"
-      });
+  onShow() {
+    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+      this.getTabBar().setData({ selected: 3 });
     }
   },
 
-  getStatusConfig(statusKey) {
-    // 兼容旧数据：如果传入的是中文 label 而非 key，也能匹配
-    return (
-      profileStatuses.find((item) => item.key === statusKey) ||
-      profileStatuses.find((item) => item.label === statusKey) ||
-      profileStatuses[0]
-    );
+  _loadTabData(tab) {
+    const typeLabel = (t) => CONTENT_TYPE_MAP[t] || t;
+    if (tab === "posts") {
+      this.setData({
+        myPosts: myPosts.map(p => ({ ...p, contentTypeLabel: typeLabel(p.contentType) })),
+      });
+    } else if (tab === "favorites") {
+      this.setData({ myFavorites: [...myFavorites] });
+    } else if (tab === "history") {
+      this.setData({ myHistory: [...myViewHistory] });
+    }
   },
 
-  handleStatusChange() {
-    wx.showActionSheet({
-      itemList: profileStatuses.map((item) => item.label),
-      success: ({ tapIndex }) => {
-        const selected = profileStatuses[tapIndex];
-        const prevKey = this.data.profile.jobStatus;
-        const prevConfig = this.data.statusConfig;
+  onTabChange(e) {
+    const key = e.currentTarget.dataset.key;
+    if (key === this.data.activeTab) return;
+    this.setData({ activeTab: key });
+    this._loadTabData(key);
+  },
 
-        // 乐观更新 UI
-        this.setData({
-          "profile.jobStatus": selected.key,
-          statusConfig: selected
-        });
+  formatCount(n) {
+    if (n == null) return "0";
+    if (n >= 10000) return (n / 10000).toFixed(1) + "w";
+    if (n >= 1000) return (n / 1000).toFixed(1) + "k";
+    return String(n);
+  },
 
-        // 持久化到云端
-        api.updateUser("jobStatus", selected.key).catch(() => {
-          // 回滚
-          this.setData({
-            "profile.jobStatus": prevKey,
-            statusConfig: prevConfig
-          });
-          wx.showToast({ title: "状态保存失败，请重试", icon: "none" });
-        });
+  onStatTap(e) {
+    const tab = e.currentTarget.dataset.tab;
+    if (tab === "followers") {
+      wx.navigateTo({ url: "/pages/follow-list/follow-list?type=followers" });
+    } else if (tab === "following") {
+      wx.navigateTo({ url: "/pages/follow-list/follow-list?type=following" });
+    } else if (tab === "posts") {
+      this.setData({ activeTab: "posts" });
+      this._loadTabData("posts");
+    } else if (tab === "favorites") {
+      this.setData({ activeTab: "favorites" });
+      this._loadTabData("favorites");
+    }
+  },
+
+  onPostTap(e) {
+    // TODO: GET /api/users/:userId/posts?page=
+    console.log("查看帖子", e.currentTarget.dataset.id);
+  },
+
+  onZoneTap(e) {
+    console.log("跳转专区", e.currentTarget.dataset.id);
+  },
+
+  goEditProfile() {
+    console.log("编辑资料");
+    wx.navigateTo({ url: "/pages/edit-profile/edit-profile" });
+  },
+
+  goSettings() {
+    wx.navigateTo({ url: "/pages/settings/settings" });
+  },
+
+  goCommunity() {
+    wx.switchTab({ url: "/pages/community/community" });
+  },
+
+  goFollowList(e) {
+    const type = e.currentTarget.dataset.type || "following";
+    wx.navigateTo({ url: `/pages/follow-list/follow-list?type=${type}` });
+  },
+
+  clearHistory() {
+    this.setData({ myHistory: [] });
+    console.log("清空浏览历史");
+    wx.showToast({ title: "已清空", icon: "none" });
+  },
+
+  handleMenuTap(e) {
+    const name = e.currentTarget.dataset.name;
+    console.log("跳转到", name);
+    wx.showToast({ title: `${name} 待接入`, icon: "none" });
+  },
+
+  handleLogout() {
+    wx.showModal({
+      title: "提示",
+      content: "确定退出登录吗？",
+      confirmColor: "#FF4D4F",
+      success: (res) => {
+        if (res.confirm) {
+          console.log("退出登录");
+          // TODO: POST /api/user/logout
+          wx.showToast({ title: "已退出登录", icon: "none" });
+        }
       }
     });
   },
-
-  handleMenuTap(event) {
-    const { name } = event.currentTarget.dataset;
-    wx.showToast({ title: `${name} 待接入`, icon: "none" });
-  }
 });

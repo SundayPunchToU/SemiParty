@@ -18,6 +18,24 @@ function buildDefaultUser(openid) {
     jobStatus: "open",
     avatarBg: "#DCE8FF",
     avatarColor: "#165DC6",
+    // 角色相关字段
+    primaryRole: null,
+    secondaryRole: null,
+    roleLabel: null,
+    education: null,
+    city: null,
+    // 内容统计字段
+    postCount: 0,
+    answerCount: 0,
+    articleCount: 0,
+    collectCount: 0,
+    // 社交统计字段
+    followingCount: 0,
+    followerCount: 0,
+    likedCount: 0,
+    // 状态字段
+    onboardingDone: false,
+    profileComplete: false,
     stats: {
       posts: 0,
       likes: 0,

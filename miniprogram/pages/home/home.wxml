@@ -13,17 +13,9 @@
     bind:searchtap="handleSearch"
   />
 
-  <view class="job-banner" bindtap="openJobMarket">
-    <view class="job-banner-icon">👥</view>
-    <view class="job-banner-body">
-      <view class="job-banner-title">{{banner.title}}</view>
-      <view class="job-banner-subtitle">{{banner.subtitle}}</view>
-    </view>
-  </view>
-
-  <view class="quick-nav-wrap">
-    <quick-nav list="{{quickNavList}}" bind:select="handleQuickNav" />
-  </view>
+  <!-- === STEP 1.3 修改开始：删除原招聘横幅和旧快捷入口 === -->
+  <!-- 原 job-banner 和 quick-nav-wrap 已移除，内容移至推荐 Tab Swiper 内 -->
+  <!-- === STEP 1.3 修改结束 === -->
 
   <scroll-view class="tab-scroll" scroll-x="true" enable-flex="true" show-scrollbar="{{false}}">
     <view class="tab-row">
@@ -32,6 +24,7 @@
         wx:key="key"
         class="tab-chip {{activeTab === item.key ? 'is-active' : ''}}"
         data-key="{{item.key}}"
+        data-index="{{index}}"
         bindtap="handleTabChange"
       >
         {{item.label}}
@@ -39,17 +32,121 @@
     </view>
   </scroll-view>
 
-  <view class="section-header">
-    <view class="section-title">今日热点</view>
-    <view class="section-link">更多 ></view>
+  <!-- === STEP 1.3 修改开始：公告条 === -->
+  <view wx:if="{{showNotice}}" class="notice-bar">
+    <text class="notice-icon">📢</text>
+    <view class="notice-text" bindtap="onNoticeTap">芯社区 2.0 版本上线，新增专区功能</view>
+    <view class="notice-close" bindtap="closeNotice">✕</view>
   </view>
+  <!-- === STEP 1.3 修改结束 === -->
 
-  <view class="news-stream">
-    <block wx:for="{{newsList}}" wx:key="id">
-      <news-card item="{{item}}" bind:cardtap="openArticle" />
-      <view wx:if="{{index !== newsList.length - 1}}" class="divider"></view>
-    </block>
-  </view>
+  <!-- === STEP 1.2 修改开始：Swiper 多 Tab 内容区 === -->
+  <swiper
+    class="content-swiper"
+    current="{{swiperCurrent}}"
+    bindchange="onSwiperChange"
+    duration="300"
+    skip-hidden-item-layout="{{true}}"
+  >
+    <!-- Tab 1: 推荐 -->
+    <swiper-item class="swiper-item">
+      <!-- === STEP 1.3 修改开始：运营横幅轮播 === -->
+      <swiper
+        class="banner-swiper"
+        autoplay="{{true}}"
+        interval="{{3000}}"
+        duration="{{500}}"
+        circular="{{true}}"
+        indicator-dots="{{true}}"
+        indicator-color="rgba(255,255,255,0.4)"
+        indicator-active-color="#FFFFFF"
+        bindchange="onBannerChange"
+      >
+        <swiper-item wx:for="{{bannerList}}" wx:key="id">
+          <view class="banner-slide" style="background: {{item.bgColor}};" bindtap="onBannerTap" data-id="{{item.id}}">
+            <text class="banner-text">{{item.text}}</text>
+          </view>
+        </swiper-item>
+      </swiper>
+      <!-- === STEP 1.3 修改结束 === -->
 
-  <view class="list-footer">{{hasMore ? (loadingMore ? '加载中...' : '') : '没有更多内容了'}}</view>
+      <!-- === STEP 1.3 修改开始：新快捷入口栏 === -->
+      <view class="shortcut-row">
+        <view
+          wx:for="{{shortcutList}}"
+          wx:key="id"
+          class="shortcut-item"
+          data-label="{{item.label}}"
+          bindtap="onShortcutTap"
+        >
+          <view class="shortcut-icon">{{item.icon}}</view>
+          <view class="shortcut-label">{{item.label}}</view>
+        </view>
+      </view>
+      <!-- === STEP 1.3 修改结束 === -->
+
+      <view class="section-header">
+        <view class="section-title">今日热点</view>
+        <view class="section-link">更多 ></view>
+      </view>
+      <view class="news-stream">
+        <!-- === STEP 1.4 修改开始：推荐 Tab 使用 ContentCard === -->
+        <block wx:for="{{activeTab === 'recommend' ? newsList : []}}" wx:key="id">
+          <content-card item="{{item}}" showZoneName="{{true}}" showContentType="{{true}}" bind:cardtap="openArticle" />
+          <view wx:if="{{index !== newsList.length - 1}}" class="divider"></view>
+        </block>
+        <!-- === STEP 1.4 修改结束 === -->
+      </view>
+      <view class="list-footer">{{activeTab === 'recommend' && hasMore ? (loadingMore ? '加载中...' : '') : (activeTab === 'recommend' && !hasMore ? '没有更多内容了' : '')}}</view>
+    </swiper-item>
+
+    <!-- Tab 2: 资讯 -->
+    <swiper-item class="swiper-item">
+      <view class="section-header">
+        <view class="section-title">行业资讯</view>
+        <view class="section-link">更多 ></view>
+      </view>
+      <view class="news-stream">
+        <block wx:for="{{activeTab === 'industry' ? newsList : []}}" wx:key="id">
+          <news-card item="{{item}}" bind:cardtap="openArticle" />
+          <view wx:if="{{index !== newsList.length - 1}}" class="divider"></view>
+        </block>
+      </view>
+      <view class="list-footer">{{activeTab === 'industry' && hasMore ? (loadingMore ? '加载中...' : '') : (activeTab === 'industry' && !hasMore ? '没有更多内容了' : '')}}</view>
+    </swiper-item>
+
+    <!-- Tab 3: 关注（空态占位） -->
+    <swiper-item class="swiper-item">
+      <view class="empty-state">
+        <view class="empty-icon">📭</view>
+        <view class="empty-text">加入你感兴趣的专区，这里会出现最新动态</view>
+        <view class="empty-btn" bindtap="goToCommunity">去发现专区</view>
+      </view>
+    </swiper-item>
+
+    <!-- Tab 4: 茶水间 -->
+    <swiper-item class="swiper-item">
+      <scroll-view class="topic-scroll" scroll-x="true" enable-flex="true" show-scrollbar="{{false}}">
+        <view class="tearoom-topic-row">
+          <view
+            wx:for="{{teaRoomTopics}}"
+            wx:key="*this"
+            class="tearoom-topic-chip {{activeTeaRoomTopic === item ? 'is-active' : ''}}"
+            data-topic="{{item}}"
+            bindtap="onTopicTap"
+          >
+            {{item}}
+          </view>
+        </view>
+      </scroll-view>
+      <view class="news-stream">
+        <block wx:for="{{activeTab === 'company' ? newsList : []}}" wx:key="id">
+          <news-card item="{{item}}" bind:cardtap="openArticle" />
+          <view wx:if="{{index !== newsList.length - 1}}" class="divider"></view>
+        </block>
+      </view>
+      <view class="list-footer">{{activeTab === 'company' && hasMore ? (loadingMore ? '加载中...' : '') : (activeTab === 'company' && !hasMore ? '没有更多内容了' : '')}}</view>
+    </swiper-item>
+  </swiper>
+  <!-- === STEP 1.2 修改结束 === -->
 </view>

@@ -1,0 +1,63 @@
+.page-sub {
+  min-height: 100vh;
+  background: #1A1A2E;
+  padding: 0 24rpx;
+}
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #1A1A2E;
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16rpx;
+  height: 88rpx;
+}
+.back-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40rpx;
+  color: #fff;
+}
+.nav-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #fff;
+}
+.section-label {
+  font-size: 26rpx;
+  color: #888;
+  padding: 24rpx 0 12rpx;
+}
+.card-group {
+  background: #2A2A3E;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+.card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28rpx;
+  height: 100rpx;
+  border-bottom: 1rpx solid #333;
+}
+.card-row:last-child {
+  border-bottom: none;
+}
+.row-text {
+  font-size: 30rpx;
+  color: #eee;
+}
+.row-value {
+  font-size: 26rpx;
+  color: #888;
+}

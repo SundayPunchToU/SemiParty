@@ -1,0 +1,60 @@
+<view class="page-follow">
+  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="nav-inner">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="nav-tabs">
+        <view
+          class="nav-tab {{activeType === 'following' ? 'is-active' : ''}}"
+          data-type="following"
+          bindtap="onTabChange"
+        >关注 {{followingList.length}}</view>
+        <view
+          class="nav-tab {{activeType === 'followers' ? 'is-active' : ''}}"
+          data-type="followers"
+          bindtap="onTabChange"
+        >粉丝 {{followerList.length}}</view>
+      </view>
+      <view style="width: 56rpx;"></view>
+    </view>
+  </view>
+
+  <!-- 关注列表 -->
+  <view wx:if="{{activeType === 'following'}}" class="list-wrap">
+    <block wx:for="{{followingList}}" wx:key="userId">
+      <view class="user-row" data-id="{{item.userId}}" bindtap="onUserTap">
+        <view class="row-avatar">{{item.nickname.slice(0, 1)}}</view>
+        <view class="row-info">
+          <view class="row-name">{{item.nickname}}</view>
+          <view class="row-detail">{{item.role}} · {{item.company}}</view>
+        </view>
+        <view
+          class="follow-btn is-followed"
+          data-uid="{{item.userId}}"
+          data-index="{{index}}"
+          data-list="following"
+          catchtap="onToggleFollow"
+        >已关注</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 粉丝列表 -->
+  <view wx:if="{{activeType === 'followers'}}" class="list-wrap">
+    <block wx:for="{{followerList}}" wx:key="userId">
+      <view class="user-row" data-id="{{item.userId}}" bindtap="onUserTap">
+        <view class="row-avatar">{{item.nickname.slice(0, 1)}}</view>
+        <view class="row-info">
+          <view class="row-name">{{item.nickname}}</view>
+          <view class="row-detail">{{item.role}} · {{item.company}}</view>
+        </view>
+        <view
+          class="follow-btn {{item._followed ? (item.isFollowedBack ? 'is-mutual' : 'is-followed') : ''}}"
+          data-uid="{{item.userId}}"
+          data-index="{{index}}"
+          data-list="followers"
+          catchtap="onToggleFollow"
+        >{{item._followed ? (item.isFollowedBack ? '互关' : '已关注') : '+关注'}}</view>
+      </view>
+    </block>
+  </view>
+</view>

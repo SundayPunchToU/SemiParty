@@ -1,0 +1,6 @@
+{
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "content-card": "/components/content-card/index"
+  }
+}

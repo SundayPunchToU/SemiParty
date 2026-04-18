@@ -25,3 +25,349 @@
   font-weight: 700;
   border-bottom-color: var(--color-primary);
 }
+
+/* === STEP 1.6 修改开始：互动 Tab 样式 === */
+.interaction-stream {
+  padding: 0 16rpx;
+}
+
+.interaction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.interaction-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: #2A2A3E;
+  color: #ffffff;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.interaction-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.interaction-top {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+  margin-bottom: 6rpx;
+}
+
+.interaction-nickname {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.interaction-action {
+  font-size: 28rpx;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.interaction-target {
+  font-size: 26rpx;
+  color: #888888;
+  margin-bottom: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.interaction-time {
+  font-size: 24rpx;
+  color: #666666;
+}
+/* === STEP 1.6 修改结束 === */
+
+/* === STEP 1.6 增强 修改开始：私聊/群组/通知列表基础样式 === */
+.msg-list {
+  padding: 0 16rpx;
+}
+
+.msg-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.msg-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.msg-top,
+.msg-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.msg-bottom {
+  margin-top: 8rpx;
+}
+
+.msg-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.msg-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.msg-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 24rpx;
+  color: #888888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msg-time {
+  font-size: 22rpx;
+  color: #666666;
+  flex-shrink: 0;
+}
+
+.msg-role-tag {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #999999;
+  background: #2A2A3E;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+}
+
+.msg-badge {
+  flex-shrink: 0;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  border-radius: 16rpx;
+  background: #ef5b56;
+  color: #fff;
+  font-size: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 私聊头像 - 圆形 */
+.msg-avatar-circle {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: #2A7FFF;
+  color: #ffffff;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 群组头像 - 方形圆角 */
+.msg-avatar-rounded {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 16rpx;
+  background: #22765d;
+  color: #ffffff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 群组成员数 */
+.msg-member-count {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #888888;
+}
+
+/* 通知列表 */
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+}
+
+.notif-item.is-read {
+  opacity: 0.6;
+}
+
+.notif-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notif-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 6rpx;
+}
+
+.notif-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-unread-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #2A7FFF;
+  flex-shrink: 0;
+}
+
+.notif-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notif-time {
+  font-size: 22rpx;
+  color: #666666;
+  flex-shrink: 0;
+}
+
+.notif-content {
+  font-size: 24rpx;
+  color: #888888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+/* === STEP 1.6 增强 修改结束 === */
+
+/* === STEP 1.6 增强 II 修改开始：左滑操作样式 === */
+.swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  z-index: 1;
+}
+
+.swipe-actions-2 {
+  width: 256rpx;
+}
+
+.swipe-actions-3 {
+  width: 384rpx;
+}
+
+.swipe-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.swipe-btn-read {
+  width: 128rpx;
+  background: #2A2A3E;
+}
+
+.swipe-btn-pin {
+  width: 128rpx;
+  background: #E8A317;
+}
+
+.swipe-btn-delete {
+  width: 128rpx;
+  background: #E84040;
+}
+
+.swipe-content {
+  position: relative;
+  z-index: 2;
+  background: #1E1E32;
+  transition: transform 0.2s ease;
+}
+
+.is-pinned {
+  background: #24243E;
+}
+
+/* 互动项也需要 swipe-content 适配 */
+.interaction-stream .swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+/* 置顶左侧竖条 */
+.is-pinned::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6rpx;
+  background: #2A7FFF;
+  border-radius: 0 3rpx 3rpx 0;
+}
+/* === STEP 1.6 增强 II 修改结束 === */

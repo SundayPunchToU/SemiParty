@@ -1,0 +1,83 @@
+<!-- pages/tea-room/tea-room.wxml -->
+<view class="tea-room-page">
+
+  <!-- ① 顶部导航栏（固定） -->
+  <view class="tea-nav" style="padding-top: {{statusBarHeight}}px;">
+    <view class="nav-inner" style="height: {{capsuleHeight}}px;">
+      <view class="nav-back" bindtap="goBack">
+        <text class="nav-back-icon">←</text>
+      </view>
+      <view class="nav-title">☕ 晶圆茶水间</view>
+      <view class="nav-actions">
+        <view class="nav-action-btn" bindtap="onSearchTap">
+          <text class="nav-action-icon">🔍</text>
+        </view>
+        <view class="nav-action-btn" bindtap="onMoreTap">
+          <text class="nav-action-icon">⋯</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ② 氛围头部卡片（可折叠） -->
+  <view class="tea-header" style="height: {{headerHeight}}rpx; opacity: {{headerOpacity}}; overflow: hidden;">
+    <view class="header-content">
+      <view class="header-main">
+        <text class="header-emoji">☕</text>
+        <view class="header-text">
+          <view class="header-title">晶圆茶水间</view>
+          <view class="header-subtitle">下了夜班，来杯茶聊聊</view>
+        </view>
+      </view>
+      <view class="header-stats">👥 {{memberCount}} 茶友 · 🟢 {{onlineCount}} 在线</view>
+    </view>
+  </view>
+
+  <!-- ③ 话题标签横滑栏（吸顶） -->
+  <view class="topic-bar" style="position: sticky; top: {{topicStickyTop}}px; z-index: 10;">
+    <scroll-view class="topic-scroll" scroll-x="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+      <view class="topic-row">
+        <view
+          wx:for="{{topics}}"
+          wx:key="topicId"
+          class="topic-chip {{activeTopicId === item.topicId ? 'is-active' : ''}}"
+          data-topicid="{{item.topicId}}"
+          bindtap="onTopicTap"
+        >{{item.name}}</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- ④ 帖子流 -->
+  <view class="post-list" wx:if="{{!isEmpty}}">
+    <view wx:for="{{posts}}" wx:key="id" class="post-item">
+      <content-card
+        item="{{item}}"
+        showZoneName="{{false}}"
+        showContentType="{{false}}"
+        showTopicTag="{{true}}"
+        bind:cardtap="onPostTap"
+      />
+    </view>
+  </view>
+
+  <!-- 空态 -->
+  <view wx:if="{{isEmpty}}" class="empty-state">
+    <text class="empty-text">茶水间暂时安静了，来发第一条动态吧！</text>
+    <view class="empty-btn" bindtap="onEmptyAction">发条动态</view>
+  </view>
+
+  <!-- 加载更多 -->
+  <view wx:if="{{loadingMore}}" class="load-more">
+    <text class="load-more-text">加载更多...</text>
+  </view>
+
+  <!-- 没有更多 -->
+  <view wx:if="{{!hasMore && posts.length > 0 && !loadingMore}}" class="no-more">
+    <text class="no-more-text">— 没有更多了 —</text>
+  </view>
+
+  <!-- ⑤ 浮动发帖按钮 -->
+  <view class="fab" bindtap="onFabTap">+</view>
+
+</view>

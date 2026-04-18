@@ -1,0 +1,52 @@
+<view class="page-edit">
+  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px;">
+    <view class="nav-inner">
+      <view class="back-btn" bindtap="goBack">‹</view>
+      <view class="nav-title">编辑资料</view>
+      <view class="save-btn {{hasChanged ? 'is-active' : ''}}" bindtap="handleSave">保存</view>
+    </view>
+  </view>
+
+  <!-- 头像 -->
+  <view class="avatar-section">
+    <view class="avatar">{{form.nickname.slice(0, 1)}}</view>
+    <view class="avatar-action" bindtap="onChangeAvatar">更换头像</view>
+  </view>
+
+  <!-- 表单 -->
+  <view class="form-section">
+    <view class="form-item">
+      <text class="form-label">昵称</text>
+      <input class="form-input" value="{{form.nickname}}" maxlength="20" bindinput="onInput" data-field="nickname" placeholder="输入昵称" />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">个人简介</text>
+      <textarea class="form-textarea" value="{{form.bio}}" maxlength="100" bindinput="onInput" data-field="bio" placeholder="介绍一下自己" auto-height="{{true}}" />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">职业角色</text>
+      <picker mode="selector" range="{{roleOptions}}" range-key="name" value="{{roleIndex}}" bindchange="onRolePick">
+        <view class="form-picker">{{roleOptions[roleIndex].name}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">所在公司</text>
+      <input class="form-input" value="{{form.company}}" bindinput="onInput" data-field="company" placeholder="输入公司/学校名称" />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">工作年限</text>
+      <picker mode="selector" range="{{expOptions}}" range-key="name" value="{{expIndex}}" bindchange="onExpPick">
+        <view class="form-picker">{{expOptions[expIndex].name}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">所在城市</text>
+      <input class="form-input" value="{{form.city}}" bindinput="onInput" data-field="city" placeholder="输入城市" />
+    </view>
+  </view>
+</view>
