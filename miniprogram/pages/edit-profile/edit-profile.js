@@ -1,5 +1,5 @@
 const { getNavMetrics } = require("../../utils/util");
-const { myProfile } = require("../../mock/profileData");
+const api = require("../../utils/api");
 
 const ROLE_OPTIONS = [
   { key: "process", name: "工艺工程师" },
@@ -30,24 +30,33 @@ Page({
   data: {
     statusBarHeight: 24,
     hasChanged: false,
+    loading: false,
+    saving: false,
     form: {
-      nickname: myProfile.nickname,
-      bio: myProfile.bio,
-      company: myProfile.company,
+      nickname: "",
+      bio: "",
+      company: "",
       city: "",
     },
     roleOptions: ROLE_OPTIONS,
     expOptions: EXP_OPTIONS,
     roleIndex: 0,
-    expIndex: 4,
+    expIndex: 0,
     original: null,
   },
 
-  onLoad() {
-    this.setData({ ...getNavMetrics() });
-    // TODO: GET /api/user/profile → fill form
-    const original = JSON.stringify(this.data.form);
-    this.setData({ original });
+  async onLoad() {
+    this.setData({ ...getNavMetrics(), loading: true });
+    try {
+      const profile = await api.getUserProfile();
+      this._applyProfile(profile || {});
+    } catch (error) {
+      console.error("load profile failed", error);
+      wx.showToast({ title: error.message || "资料加载失败", icon: "none" });
+      this._cacheOriginal();
+    } finally {
+      this.setData({ loading: false });
+    }
   },
 
   onInput(e) {
@@ -67,22 +76,97 @@ Page({
     this._checkChanged();
   },
 
+  _buildSnapshot(nextState = {}) {
+    const form = nextState.form || this.data.form;
+    const roleIndex =
+      nextState.roleIndex !== undefined ? nextState.roleIndex : this.data.roleIndex;
+    const expIndex =
+      nextState.expIndex !== undefined ? nextState.expIndex : this.data.expIndex;
+
+    return JSON.stringify({
+      form,
+      roleIndex,
+      expIndex,
+    });
+  },
+
+  _cacheOriginal() {
+    this.setData({
+      original: this._buildSnapshot(),
+      hasChanged: false,
+    });
+  },
+
+  _applyProfile(profile) {
+    const roleIndex = Math.max(
+      this.data.roleOptions.findIndex((item) => item.name === (profile.role || profile.title || "")),
+      0
+    );
+    const expIndex = Math.max(
+      this.data.expOptions.findIndex((item) => item.name === (profile.experience || "")),
+      0
+    );
+
+    this.setData({
+      form: {
+        nickname: profile.nickname || profile.nickName || "",
+        bio: profile.bio || "",
+        company: profile.company || "",
+        city: profile.city || "",
+      },
+      roleIndex,
+      expIndex,
+    }, () => this._cacheOriginal());
+  },
+
   _checkChanged() {
-    const current = JSON.stringify(this.data.form);
+    const current = this._buildSnapshot();
     this.setData({ hasChanged: current !== this.data.original });
   },
 
-  handleSave() {
-    if (!this.data.hasChanged) return;
-    // TODO: PUT /api/user/profile
-    const formData = {
-      ...this.data.form,
-      role: this.data.roleOptions[this.data.roleIndex].name,
-      experience: this.data.expOptions[this.data.expIndex].name,
+  async handleSave() {
+    if (!this.data.hasChanged || this.data.saving) return;
+
+    const nickname = this.data.form.nickname.trim();
+    if (!nickname) {
+      wx.showToast({ title: "请填写昵称", icon: "none" });
+      return;
+    }
+
+    const role = this.data.roleOptions[this.data.roleIndex]?.name || "";
+    const experience = this.data.expOptions[this.data.expIndex]?.name || "";
+    const payload = {
+      nickname,
+      nickName: nickname,
+      bio: this.data.form.bio.trim(),
+      company: this.data.form.company.trim(),
+      city: this.data.form.city.trim(),
+      role,
+      title: role,
+      experience,
+      avatarText: nickname.slice(0, 1),
     };
-    console.log("保存资料", formData);
-    wx.showToast({ title: "保存成功", icon: "success" });
-    setTimeout(() => wx.navigateBack(), 800);
+
+    this.setData({ saving: true });
+    try {
+      await api.updateUser(payload);
+      this.setData({
+        form: {
+          ...this.data.form,
+          nickname,
+          bio: payload.bio,
+          company: payload.company,
+          city: payload.city,
+        },
+      }, () => this._cacheOriginal());
+      wx.showToast({ title: "保存成功", icon: "success" });
+      setTimeout(() => wx.navigateBack(), 500);
+    } catch (error) {
+      console.error("save profile failed", error);
+      wx.showToast({ title: error.message || "保存失败", icon: "none" });
+    } finally {
+      this.setData({ saving: false });
+    }
   },
 
   onChangeAvatar() {

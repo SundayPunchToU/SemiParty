@@ -12,6 +12,8 @@
 
   <!-- ② 表单区域 -->
   <view class="form-area">
+    <view class="page-subtitle">用更清晰的结构提交专区申请，审核信息也会更直观。</view>
+
     <!-- 专区名称 -->
     <view class="form-group">
       <view class="form-label">专区名称 <text class="required">*</text></view>

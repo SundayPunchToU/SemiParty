@@ -18,6 +18,14 @@
     </view>
   </view>
 
+  <view wx:if="{{activeType === 'following' && !followingList.length}}" class="list-wrap">
+    <view class="empty-note">还没有关注任何人，去社区逛逛吧</view>
+  </view>
+
+  <view wx:if="{{activeType === 'followers' && !followerList.length}}" class="list-wrap">
+    <view class="empty-note">暂时还没有新的粉丝</view>
+  </view>
+
   <!-- 关注列表 -->
   <view wx:if="{{activeType === 'following'}}" class="list-wrap">
     <block wx:for="{{followingList}}" wx:key="userId">

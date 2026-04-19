@@ -23,6 +23,7 @@ Page({
     activeTopic: "",
     posts: [],
     sourcePosts: [],
+    postLoading: false,
     page: 1,
     hasMore: true,
     loadingMore: false,
@@ -61,6 +62,8 @@ Page({
       app.globalData.communityNeedsRefresh = false;
       this.loadPosts(true);
       this.loadMyZones();
+      this.loadTeaRoomInfo();
+      this.loadZoneListByCategory(this.data.activeCategory, true);
     }
   },
 
@@ -128,11 +131,14 @@ Page({
     if (!this.data.activeTopic) {
       return list;
     }
-    return list.filter((item) => item.topic.text === this.data.activeTopic);
+    return list.filter((item) => item.topic && item.topic.text === this.data.activeTopic);
   },
 
   async loadPosts(reset = false) {
     const nextPage = reset ? 1 : this.data.page;
+    if (reset) {
+      this.setData({ postLoading: true });
+    }
     try {
       const result = await api.getPostList(this.data.activeTab, nextPage);
       const sourcePosts = reset
@@ -144,7 +150,8 @@ Page({
         posts: this.applyTopicFilter(sourcePosts),
         page: nextPage + 1,
         hasMore: result.hasMore,
-        loadingMore: false
+        loadingMore: false,
+        postLoading: false
       });
     } catch (error) {
       console.error("loadPosts failed", error);
@@ -212,7 +219,7 @@ Page({
   },
 
   handleShare() {
-    wx.showToast({ title: "分享能力待接入", icon: "none" });
+    wx.showToast({ title: "请使用右上角转发社区内容", icon: "none" });
   },
 
   async handleLike(event) {
@@ -229,7 +236,7 @@ Page({
   },
 
   onSearchTap() {
-    console.log("搜索");
+    wx.navigateTo({ url: "/pages/search/search" });
   },
 
   goToTeaRoom() {
@@ -294,14 +301,26 @@ Page({
   },
 
   onViewAllZones() {
-    console.log("查看全部专区");
+    if (this.data.activeCategory !== "company") {
+      this.setData({ activeCategory: "company", currentZoneList: [] });
+      this.loadZoneListByCategory("company");
+      return;
+    }
+    wx.pageScrollTo({ scrollTop: 520, duration: 280 });
   },
 
   onGoDiscover() {
-    console.log("去看看");
+    this.setData({ activeCategory: "tech", currentZoneList: [] });
+    this.loadZoneListByCategory("tech", true);
+    wx.pageScrollTo({ scrollTop: 520, duration: 280 });
   },
 
   onCreateZone() {
-    wx.navigateTo({ url: "/pages/create-zone/create-zone" });
+    wx.showModal({
+      title: "申请创建专区",
+      content: "当前 MVP 版本暂未开放自助创建专区，如有明确行业社群诉求可先联系运营。",
+      confirmText: "我知道了",
+      showCancel: false,
+    });
   },
 });

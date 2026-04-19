@@ -1,83 +1,76 @@
-<!-- === STEP 1.1 新增：自定义 TabBar 模板 === -->
-<!-- === STEP 2.4 增强：新增中央凸起发帖按钮 + 发帖入口面板 === -->
-<view class="tab-bar">
-  <!-- 左侧两个 Tab -->
-  <view
-    wx:for="{{list}}"
-    wx:key="index"
-    wx:if="{{index < 2}}"
-    class="tab-bar-item"
-    data-path="{{item.pagePath}}"
-    data-index="{{index}}"
-    bindtap="switchTab"
-  >
-    <!-- 图标 -->
-    <view class="tab-icon-wrap">
-      <image class="tab-icon" src="{{selected === index ? item.selectedIconPath : item.iconPath}}" />
-      <!-- === STEP 1.1 修改开始：消息 Tab 未读角标 === -->
-      <view wx:if="{{item.unreadCount > 0}}" class="badge">
-        {{item.unreadCount > 99 ? '99+' : item.unreadCount}}
+<view class="tabbar-shell">
+  <view class="tabbar-inner">
+    <view class="tabbar-side">
+      <view
+        wx:for="{{list}}"
+        wx:key="pagePath"
+        wx:if="{{index < 2}}"
+        class="tabbar-item {{selected === index ? 'is-selected' : ''}}"
+        data-path="{{item.pagePath}}"
+        bindtap="switchTab"
+      >
+        <view class="tabbar-icon-wrap">
+          <image
+            class="tabbar-icon"
+            src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
+            mode="aspectFit"
+          />
+        </view>
+        <text class="tabbar-text">{{item.text}}</text>
       </view>
-      <!-- === STEP 1.1 修改结束 === -->
-      <!-- === STEP 1.1 修改开始：社区 Tab 小红点 === -->
-      <view wx:if="{{item.showRedDot}}" class="red-dot"></view>
-      <!-- === STEP 1.1 修改结束 === -->
     </view>
-    <!-- 文字 -->
-    <view class="tab-text" style="color: {{selected === index ? selectedColor : color}}">
-      {{item.text}}
-    </view>
-  </view>
 
-  <!-- 中央凸起发帖按钮 -->
-  <view class="tab-bar-item tab-bar-item-center">
-    <view class="center-btn" bindtap="onCenterBtnTap">
-      <text class="center-btn-icon">+</text>
-    </view>
-  </view>
-
-  <!-- 右侧两个 Tab -->
-  <view
-    wx:for="{{list}}"
-    wx:key="index"
-    wx:if="{{index >= 2}}"
-    class="tab-bar-item"
-    data-path="{{item.pagePath}}"
-    data-index="{{index}}"
-    bindtap="switchTab"
-  >
-    <view class="tab-icon-wrap">
-      <image class="tab-icon" src="{{selected === index ? item.selectedIconPath : item.iconPath}}" />
-      <view wx:if="{{item.unreadCount > 0}}" class="badge">
-        {{item.unreadCount > 99 ? '99+' : item.unreadCount}}
-      </view>
-      <view wx:if="{{item.showRedDot}}" class="red-dot"></view>
-    </view>
-    <view class="tab-text" style="color: {{selected === index ? selectedColor : color}}">
-      {{item.text}}
-    </view>
-  </view>
-
-  <!-- 发帖入口面板 -->
-  <view wx:if="{{showPostPanel}}" class="post-panel-overlay" bindtap="onOverlayTap">
-    <view class="post-panel" catchtap="preventBubble">
-      <view class="post-panel-grid">
-        <view
-          wx:for="{{postCards}}"
-          wx:key="action"
-          class="post-card"
-          data-action="{{item.action}}"
-          bindtap="onPostCardTap"
-        >
-          <text class="post-card-icon">{{item.icon}}</text>
-          <view class="post-card-info">
-            <view class="post-card-title">{{item.title}}</view>
-            <view class="post-card-subtitle">{{item.subtitle}}</view>
-          </view>
+    <view class="tabbar-center">
+      <view class="center-trigger" bindtap="openPostPanel">
+        <view class="center-trigger-core">
+          <text class="center-trigger-plus">+</text>
         </view>
       </view>
-      <view class="post-panel-close" bindtap="closePostPanel">
-        <text class="post-panel-close-icon">✕</text>
+      <text class="center-trigger-text">发布</text>
+    </view>
+
+    <view class="tabbar-side">
+      <view
+        wx:for="{{list}}"
+        wx:key="pagePath"
+        wx:if="{{index >= 2}}"
+        class="tabbar-item {{selected === index ? 'is-selected' : ''}}"
+        data-path="{{item.pagePath}}"
+        bindtap="switchTab"
+      >
+        <view class="tabbar-icon-wrap">
+          <image
+            class="tabbar-icon"
+            src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
+            mode="aspectFit"
+          />
+          <view wx:if="{{item.unreadCount > 0}}" class="tabbar-badge">
+            {{item.unreadCount > 99 ? '99+' : item.unreadCount}}
+          </view>
+        </view>
+        <text class="tabbar-text">{{item.text}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showPostPanel}}" class="post-panel-mask" bindtap="closePostPanel">
+    <view class="post-panel-sheet" catchtap="preventBubble">
+      <view class="post-panel-header">
+        <view class="post-panel-title">选择发布方式</view>
+        <view class="post-panel-close" bindtap="closePostPanel">×</view>
+      </view>
+      <view class="post-panel-grid">
+        <view
+          wx:for="{{postActions}}"
+          wx:key="action"
+          class="post-panel-card"
+          data-action="{{item.action}}"
+          bindtap="handlePostAction"
+        >
+          <view class="post-panel-card-icon">{{item.icon}}</view>
+          <view class="post-panel-card-title">{{item.title}}</view>
+          <view class="post-panel-card-subtitle">{{item.subtitle}}</view>
+        </view>
       </view>
     </view>
   </view>

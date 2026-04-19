@@ -1,5 +1,5 @@
 .job-card {
-  padding: 24rpx;
+  padding: var(--card-pad);
   margin-bottom: 18rpx;
 }
 
@@ -13,11 +13,12 @@
 .job-title {
   font-size: 34rpx;
   font-weight: 700;
+  color: var(--color-text-primary);
 }
 
 .job-meta {
   margin-top: 6rpx;
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
@@ -36,10 +37,10 @@
 
 .job-tag {
   padding: 8rpx 14rpx;
-  border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-muted);
   color: var(--color-text-secondary);
-  font-size: 22rpx;
+  font-size: var(--font-xs);
 }
 
 .job-bottom {
@@ -50,17 +51,22 @@
 }
 
 .job-bonus {
-  font-size: 24rpx;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
 .job-apply {
-  padding: 10rpx 24rpx;
-  border-radius: 999rpx;
-  background: rgba(42, 127, 255, 0.16);
-  color: #8cc2ff;
-  font-size: 24rpx;
-  font-weight: 600;
+  min-width: 152rpx;
+  height: 56rpx;
+  padding: 0 24rpx;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-dim);
+  color: var(--color-primary-text);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .job-apply.is-loading {

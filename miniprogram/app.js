@@ -1,7 +1,17 @@
 const mockData = require("./utils/mock-data");
 const { DEV_USE_MOCK } = require("./utils/config");
+const api = require("./utils/api");
 
 const MOCK_STATE_STORAGE_KEY = "semi_party_mock_state";
+
+function createDefaultUnreadSummary() {
+  return {
+    privateUnread: 0,
+    groupUnread: 0,
+    totalUnread: 0,
+    hasUnread: false,
+  };
+}
 
 function createDefaultMockState() {
   const chats = mockData.chatList.map((item) => ({ ...item }));
@@ -127,9 +137,13 @@ App({
       navCapsuleInsetRight,
       userProfile: mockData.userProfile,
       mockState: this.loadMockState(),
+      unreadSummary: createDefaultUnreadSummary(),
     };
 
     this.initCloud();
+    if (this.globalData.useMock) {
+      this.refreshUnreadSummary();
+    }
   },
 
   loadMockState() {
@@ -155,6 +169,32 @@ App({
     }
 
     return normalized;
+  },
+
+  syncCurrentTabBar() {
+    try {
+      const pages = getCurrentPages();
+      const currentPage = pages[pages.length - 1];
+      if (currentPage && typeof currentPage.getTabBar === "function") {
+        const tabBar = currentPage.getTabBar();
+        if (tabBar && typeof tabBar.setData === "function") {
+          tabBar.setData({
+            "list[2].unreadCount": this.globalData.unreadSummary.totalUnread || 0,
+          });
+        }
+      }
+    } catch (error) {
+      console.warn("syncCurrentTabBar failed", error);
+    }
+  },
+
+  updateUnreadSummary(summary = {}) {
+    this.globalData.unreadSummary = {
+      ...createDefaultUnreadSummary(),
+      ...summary,
+    };
+    this.syncCurrentTabBar();
+    return this.globalData.unreadSummary;
   },
 
   resetMockState() {
@@ -204,6 +244,19 @@ App({
       }
     } catch (error) {
       console.warn("cloud login failed", error);
+    } finally {
+      this.refreshUnreadSummary();
+    }
+  },
+
+  async refreshUnreadSummary() {
+    try {
+      const summary = await api.getUnreadSummary();
+      this.updateUnreadSummary(summary);
+      return summary;
+    } catch (error) {
+      console.warn("refreshUnreadSummary failed", error);
+      return this.updateUnreadSummary(createDefaultUnreadSummary());
     }
   },
 });

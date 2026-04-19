@@ -140,8 +140,32 @@ const TEA_ROOM_TOPICS = [
 
 // ─── Helper ───
 async function getUserJoinedZoneIds(openid) {
-  const res = await db.collection("user_zones").where({ userId: openid }).field({ zoneId: true }).get();
-  return new Set(res.data.map(r => r.zoneId));
+  const records = await getUserZoneJoinRecords(openid);
+  return new Set(records.map(r => r.zoneId));
+}
+
+async function getUserZoneJoinRecords(openid) {
+  const results = await Promise.all([
+    db.collection("user_zones").where({ userId: openid }).get(),
+    db.collection("user_zones").where({ openid }).get(),
+    db.collection("user_zones").where({ uid: openid }).get(),
+  ]);
+  const deduped = {};
+
+  results.forEach((res) => {
+    (res.data || []).forEach((item) => {
+      const key = item._id || `${item.zoneId}_${item.userId || item.openid || item.uid || openid}`;
+      if (!deduped[key]) {
+        deduped[key] = item;
+      }
+    });
+  });
+
+  return Object.values(deduped).sort((left, right) => {
+    const leftTime = new Date(left.lastVisitedAt || left.joinedAt || 0).getTime();
+    const rightTime = new Date(right.lastVisitedAt || right.joinedAt || 0).getTime();
+    return rightTime - leftTime;
+  });
 }
 
 async function attachIsJoined(zones, openid) {
@@ -218,6 +242,25 @@ async function getZonePinned(event) {
 // 6. 加入专区
 async function joinZone(event, openid) {
   const { zoneId } = event;
+  const existingRecords = await getUserZoneJoinRecords(openid);
+  if (existingRecords.find((item) => item.zoneId === zoneId)) {
+    return { success: true, message: "already joined" };
+  }
+
+  await db.collection("user_zones").add({
+    data: {
+      userId: openid,
+      openid,
+      uid: openid,
+      zoneId,
+      joinedAt: db.serverDate(),
+      lastVisitedAt: null,
+      hasNewContent: false,
+    },
+  });
+  await db.collection("zones").where({ zoneId }).update({ data: { memberCount: _.inc(1), updatedAt: db.serverDate() } });
+  return { success: true, message: "joined" };
+
   const existing = await db.collection("user_zones").where({ userId: openid, zoneId }).limit(1).get();
   if (existing.data.length) return { success: true, message: "已加入" };
 
@@ -229,6 +272,19 @@ async function joinZone(event, openid) {
 // 7. 退出专区
 async function leaveZone(event, openid) {
   const { zoneId } = event;
+  const existingRecords = (await getUserZoneJoinRecords(openid)).filter((item) => item.zoneId === zoneId);
+  if (!existingRecords.length) {
+    return { success: true, message: "not joined" };
+  }
+
+  for (const item of existingRecords) {
+    if (item._id) {
+      await db.collection("user_zones").doc(item._id).remove();
+    }
+  }
+  await db.collection("zones").where({ zoneId }).update({ data: { memberCount: _.inc(-1), updatedAt: db.serverDate() } });
+  return { success: true, message: "left" };
+
   const existing = await db.collection("user_zones").where({ userId: openid, zoneId }).limit(1).get();
   if (!existing.data.length) return { success: true, message: "未加入" };
 
@@ -239,6 +295,38 @@ async function leaveZone(event, openid) {
 
 // 8. 获取用户已加入的专区列表
 async function getUserZones(openid) {
+  const joinList = await getUserZoneJoinRecords(openid);
+  if (!joinList.length) return { zones: [] };
+
+  const zoneIds = joinList.map((item) => item.zoneId);
+  const zoneRes = await db.collection("zones").where({ zoneId: _.in(zoneIds) }).field({
+    zoneId: true,
+    zoneName: true,
+    zoneIcon: true,
+    memberCount: true,
+    category: true,
+    zoneDesc: true,
+    tabs: true
+  }).get();
+  const zoneMap = {};
+  zoneRes.data.forEach((item) => {
+    zoneMap[item.zoneId] = item;
+  });
+
+  return {
+    zones: joinList.map((item) => ({
+      zoneId: item.zoneId,
+      zoneName: (zoneMap[item.zoneId] || {}).zoneName || "",
+      zoneIcon: (zoneMap[item.zoneId] || {}).zoneIcon || null,
+      category: (zoneMap[item.zoneId] || {}).category || "",
+      zoneDesc: (zoneMap[item.zoneId] || {}).zoneDesc || "",
+      memberCount: (zoneMap[item.zoneId] || {}).memberCount || 0,
+      tabs: (zoneMap[item.zoneId] || {}).tabs || [],
+      hasNewContent: item.hasNewContent,
+      joinedAt: item.joinedAt
+    }))
+  };
+
   const joinRes = await db.collection("user_zones").where({ userId: openid }).orderBy("lastVisitedAt", "desc").get();
   if (!joinRes.data.length) return { zones: [] };
 

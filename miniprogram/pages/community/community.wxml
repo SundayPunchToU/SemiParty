@@ -98,14 +98,37 @@
       </view>
     </view>
   </view>
+
+  <view class="community-feed-section">
+    <view class="section-header">
+      <view class="section-title">社区热议</view>
+      <view class="section-more" bindtap="handleCreatePost">发帖 ></view>
+    </view>
+
+    <view wx:if="{{postLoading && posts.length === 0}}" class="feed-loading">帖子加载中...</view>
+    <view wx:elif="{{posts.length === 0}}" class="feed-loading">暂无帖子，去发第一条吧</view>
+    <view wx:else class="community-feed-list">
+      <block wx:for="{{posts}}" wx:key="id">
+        <post-card
+          item="{{item}}"
+          bind:cardtap="openPostDetail"
+          bind:comment="openComment"
+          bind:like="handleLike"
+          bind:share="handleShare"
+        />
+      </block>
+      <view class="feed-footer">{{hasMore ? (loadingMore ? '加载中...' : '') : '没有更多帖子了'}}</view>
+    </view>
+  </view>
+
   <!-- === STEP 1.5 修改结束 === -->
 
   <!-- === Step 2.5 增强：创建专区入口 === -->
   <view class="create-zone-entry">
     <view class="create-zone-title">没找到你的圈子？</view>
     <view class="create-zone-card" bindtap="onCreateZone">
-      <view class="create-zone-card-title">＋ 申请创建专区</view>
-      <view class="create-zone-card-desc">满足条件即可创建属于你的行业交流圈子</view>
+      <view class="create-zone-card-title">申请创建专区</view>
+      <view class="create-zone-card-desc">当前版本先采用人工审核受理，避免无效专区泛滥</view>
     </view>
   </view>
   <!-- === Step 2.5 增强结束 === -->

@@ -37,6 +37,48 @@ function _deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
+function normalizeCommentAuthor(author = {}, anonymous = false) {
+  const nickname = author.nickname || author.name || (anonymous ? "匿名芯片人" : "芯社区用户");
+  return {
+    userId: author.userId || author.uid || "",
+    nickname,
+    avatarText: author.avatarText || String(nickname).slice(0, 1) || "U",
+    avatarBg: author.avatarBg || "#DCE8FF",
+    avatarColor: author.avatarColor || "#165DC6",
+    role: author.role || author.title || "",
+    experience: author.experience || "",
+  };
+}
+
+function normalizeReplyItem(reply = {}) {
+  return {
+    ...reply,
+    replyId: reply.replyId || reply._id || `reply_${Date.now()}`,
+    author: normalizeCommentAuthor(reply.author, reply.isAnonymous),
+    replyTo: reply.replyTo || null,
+    likeCount: Number(reply.likeCount ?? reply.likes ?? 0) || 0,
+    isLiked: false,
+    createdAt: formatRelative(reply.createdAt) || reply.createdAt || "刚刚",
+  };
+}
+
+function normalizeCommentItem(comment = {}, index = 0) {
+  const replies = Array.isArray(comment.replies) ? comment.replies.map(normalizeReplyItem) : [];
+  return {
+    ...comment,
+    commentId: comment.commentId || comment._id || `comment_${index}_${Date.now()}`,
+    floor: comment.floor || index + 1,
+    author: normalizeCommentAuthor(comment.author, comment.isAnonymous),
+    likeCount: Number(comment.likeCount ?? comment.likes ?? 0) || 0,
+    isLiked: false,
+    replyCount: Number(comment.replyCount ?? replies.length ?? 0) || 0,
+    replies,
+    createdAt: formatRelative(comment.createdAt) || comment.createdAt || "刚刚",
+    images: Array.isArray(comment.images) ? comment.images : [],
+    attachments: Array.isArray(comment.attachments) ? comment.attachments : [],
+  };
+}
+
 Page({
   data: {
     statusBarHeight: 24,
@@ -69,6 +111,10 @@ Page({
     // 帖子互动
     postLiked: false,
     postFavorited: false,
+    authorFollowed: false,
+    isOwnPost: false,
+    commentSubmitting: false,
+    postActionLoading: false,
   },
 
   _postAuthorUserId: "",
@@ -80,31 +126,34 @@ Page({
     });
 
     try {
+      const loginResult = await api.login().catch(() => null);
+      const currentOpenid = loginResult?.openid || getApp().globalData.openid || "";
       const post = await api.getPostDetail(options.id);
       const ct = CONTENT_TYPE_MAP[post.contentType] || CONTENT_TYPE_MAP.discuss;
       const author = post.author || {};
       const title = author.title || "";
-      const parts = title.split("·").map(s => s.trim());
-      const role = parts[0] || "";
+      const parts = title.split("·").map((s) => s.trim());
+      const role = parts[0] || author.role || "";
       const experience = author.experience || "";
-      this._postAuthorUserId = author.userId || "";
+      this._postAuthorUserId = author.userId || author.uid || "";
 
-      // 处理附件图标
-      const atts = (postAttachments || []).map(a => ({
+      const atts = (postAttachments || []).map((a) => ({
         ...a,
         icon: getFileIcon(a.fileType)
       }));
 
-      // 初始化评论
-      const comments = _deepClone(mockComments);
-      const totalCommentCount = this._calcTotalCount(comments);
-
-      // 处理评论附件图标
-      comments.forEach(c => {
+      const comments = _deepClone(mockComments).map((item, index) => normalizeCommentItem(item, index));
+      comments.forEach((c) => {
         if (c.attachments && c.attachments.length) {
-          c.attachments = c.attachments.map(a => ({ ...a, icon: getFileIcon(a.fileType) }));
+          c.attachments = c.attachments.map((a) => ({ ...a, icon: getFileIcon(a.fileType) }));
         }
       });
+
+      let postFavorited = false;
+      try {
+        const favoritesRes = await api.getFavorites({ type: "post", page: 1, pageSize: 100 });
+        postFavorited = (favoritesRes.data || []).some((item) => item.targetId === post.id);
+      } catch (e) {}
 
       this.setData({
         post,
@@ -117,10 +166,14 @@ Page({
         authorRole: role,
         authorExperience: experience,
         postZoneName: post.zoneName || "",
-        viewCount: post.views || 0,
+        viewCount: post.views || post.viewCount || 0,
         postAttachments: atts,
         commentList: comments,
-        totalCommentCount
+        totalCommentCount: this._calcTotalCount(comments),
+        postLiked: currentOpenid ? (post.likedOpenids || []).includes(currentOpenid) : false,
+        postFavorited,
+        authorFollowed: !!(author.isFollowed || author.followed),
+        isOwnPost: !!currentOpenid && currentOpenid === this._postAuthorUserId,
       });
 
       this.loadComments(options.id);
@@ -140,10 +193,22 @@ Page({
 
   async loadComments(postId) {
     try {
-      const result = await api.getComments("post", postId, 1);
-      // 保留本地 mock 评论，远程结果备用
+      const result = await api.getComments({
+        targetType: "post",
+        targetId: postId,
+        sort: this.data.commentSort === "hottest" ? "hot" : "createdAt",
+        page: 1,
+      });
+      const remoteComments = (result.data || []).map((item, index) => normalizeCommentItem(item, index));
+      if (!remoteComments.length) {
+        return;
+      }
+      this.setData({
+        commentList: remoteComments,
+        totalCommentCount: this._calcTotalCount(remoteComments),
+      });
     } catch (e) {
-      // 静默处理
+      console.warn("loadComments fallback", e);
     }
   },
 
@@ -154,38 +219,50 @@ Page({
   },
 
   onZoneTap() {
-    console.log("跳转到专区", this.data.zoneId);
+    if (!this.data.zoneId) {
+      return;
+    }
+    wx.navigateTo({ url: `/pages/zone-detail/zone-detail?zoneId=${this.data.zoneId}` });
   },
 
   onRelatedPostTap(e) {
-    console.log("跳转到相关帖子", e.currentTarget.dataset.id);
+    const id = e.currentTarget.dataset.id;
+    if (!id) {
+      return;
+    }
+    wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${id}` });
   },
 
   // ===== 附件下载 =====
   onDownloadAttachment(e) {
     const fileId = e.currentTarget.dataset.fileid;
     console.log("下载附件", fileId);
-    wx.showToast({ title: "下载功能待接入", icon: "none" });
+    wx.showToast({ title: "当前版本暂不支持附件下载", icon: "none" });
   },
 
   // ===== 图片预览 =====
   onPreviewImage(e) {
-    const url = e.currentTarget.dataset.url;
-    const index = e.currentTarget.dataset.index;
-    console.log("预览图片", index, url);
+    const { url } = e.currentTarget.dataset;
+    const urls = (this.data.post && this.data.post.images) || [];
+    if (!url || !urls.length) {
+      return;
+    }
+    wx.previewImage({ current: url, urls });
   },
 
   // ===== 评论排序 =====
   onSortChange(e) {
     const sort = e.currentTarget.dataset.sort;
     if (sort === this.data.commentSort) return;
-    let list = this.data.commentList;
-    if (sort === "hottest") {
-      list = [...list].sort((a, b) => b.likeCount - a.likeCount);
-    } else {
-      list = [...list].sort((a, b) => a.floor - b.floor);
+    this.setData({ commentSort: sort });
+    if (this.data.post && (this.data.post.id || this.data.post._id)) {
+      this.loadComments(this.data.post.id || this.data.post._id);
+      return;
     }
-    this.setData({ commentSort: sort, commentList: list });
+    const list = sort === "hottest"
+      ? [...this.data.commentList].sort((a, b) => b.likeCount - a.likeCount)
+      : [...this.data.commentList].sort((a, b) => a.floor - b.floor);
+    this.setData({ commentList: list });
   },
 
   // ===== 评论展开/折叠（内容 > 6行） =====
@@ -261,11 +338,15 @@ Page({
   onLongPressReply(e) {
     const { cidx, ridx } = e.currentTarget.dataset;
     const reply = this.data.commentList[cidx].replies[ridx];
+    const comment = this.data.commentList[cidx];
     wx.showActionSheet({
       itemList: ["回复", "复制文字", "举报"],
       success: (res) => {
         if (res.tapIndex === 0) {
-          this.setData({ inputExpanded: true, replyTarget: { nickname: reply.author.nickname, commentId: reply.replyId, replyId: reply.replyId } });
+          this.setData({
+            inputExpanded: true,
+            replyTarget: { nickname: reply.author.nickname, commentId: comment.commentId, replyId: reply.replyId }
+          });
         } else if (res.tapIndex === 1) {
           wx.setClipboardData({ data: reply.content });
         } else if (res.tapIndex === 2) {
@@ -296,90 +377,161 @@ Page({
     this.setData({ isAnonymous: !this.data.isAnonymous });
   },
 
-  onPublishComment() {
-    const { inputValue, isAnonymous, replyTarget, commentList, post } = this.data;
-    if (!inputValue.trim()) return;
-
-    if (replyTarget && replyTarget.replyId) {
-      // 楼中楼回复
-      const cIdx = commentList.findIndex(c => c.commentId === replyTarget.commentId);
-      if (cIdx === -1) return;
-      const newReply = {
-        replyId: "r-new-" + Date.now(),
-        author: { userId: "me", nickname: isAnonymous ? "匿名芯片人" : "我", avatar: null, role: isAnonymous ? "" : "芯片工程师" },
-        content: inputValue.trim(),
-        replyTo: { userId: "", nickname: replyTarget.nickname },
-        likeCount: 0,
-        isLiked: false,
-        createdAt: "刚刚"
-      };
-      const replies = [...commentList[cIdx].replies, newReply];
-      const replyCount = (commentList[cIdx].replyCount || 0) + 1;
-      const totalCommentCount = this.data.totalCommentCount + 1;
-      this.setData({
-        ["commentList[" + cIdx + "].replies"]: replies,
-        ["commentList[" + cIdx + "].replyCount"]: replyCount,
-        totalCommentCount,
-        inputExpanded: false,
-        inputValue: "",
-        replyTarget: null
-      });
-    } else {
-      // 新主楼评论
-      const maxFloor = commentList.reduce((m, c) => Math.max(m, c.floor || 0), 0);
-      const newComment = {
-        commentId: "c-new-" + Date.now(),
-        floor: maxFloor + 1,
-        author: { userId: "me", nickname: isAnonymous ? "匿名芯片人" : "我", avatar: null, role: isAnonymous ? "" : "芯片工程师", experience: "" },
-        content: inputValue.trim(),
-        images: [],
-        attachments: [],
-        likeCount: 0,
-        isLiked: false,
-        replyCount: 0,
-        createdAt: "刚刚",
-        replies: [],
-        isNew: true
-      };
-      const newList = [...commentList, newComment];
-      const totalCommentCount = this.data.totalCommentCount + 1;
-      this.setData({
-        commentList: newList,
-        totalCommentCount,
-        inputExpanded: false,
-        inputValue: "",
-        replyTarget: null
-      });
+  async onPublishComment() {
+    const { inputValue, replyTarget, post, commentSubmitting } = this.data;
+    const content = (inputValue || "").trim();
+    const postId = (post && (post.id || post._id)) || "";
+    if (!content || !postId || commentSubmitting) {
+      return;
     }
 
-    wx.showToast({ title: "评论成功", icon: "success" });
+    this.setData({ commentSubmitting: true });
+    try {
+      await api.login();
+      await api.addComment({
+        targetType: "post",
+        targetId: postId,
+        content,
+        parentId: replyTarget ? replyTarget.commentId || "" : "",
+        replyTo: replyTarget && replyTarget.replyId ? replyTarget.replyId : "",
+      });
+
+      await this.loadComments(postId);
+      this.setData({
+        inputExpanded: false,
+        inputValue: "",
+        replyTarget: null,
+        "post.comments": Number((this.data.post && this.data.post.comments) || 0) + 1,
+      });
+      wx.showToast({ title: "评论成功", icon: "success" });
+    } catch (error) {
+      console.error("publish comment failed", error);
+      wx.showToast({
+        title: error.message === "user not found" ? "请先初始化当前用户资料" : (error.message || "评论失败，请稍后重试"),
+        icon: "none"
+      });
+    } finally {
+      this.setData({ commentSubmitting: false });
+    }
   },
 
   // ===== 帖子点赞/收藏 =====
-  togglePostLike() {
-    const liked = !this.data.postLiked;
-    this.setData({ postLiked: liked });
-    wx.showToast({ title: liked ? "已点赞" : "取消点赞", icon: "none" });
+  async togglePostLike() {
+    const postId = this.data.post && (this.data.post.id || this.data.post._id);
+    if (!postId || this.data.postActionLoading) {
+      return;
+    }
+    this.setData({ postActionLoading: true });
+    try {
+      await api.login();
+      const result = await api.toggleLike("post", postId);
+      const liked = !!result.liked;
+      const likes = Number(result.likes ?? this.data.post.likes ?? 0) || 0;
+      this.setData({
+        postLiked: liked,
+        "post.likes": likes,
+      });
+    } catch (error) {
+      wx.showToast({ title: error.message || "点赞失败，请稍后重试", icon: "none" });
+    } finally {
+      this.setData({ postActionLoading: false });
+    }
   },
 
-  togglePostFavorite() {
-    const faved = !this.data.postFavorited;
-    this.setData({ postFavorited: faved });
-    wx.showToast({ title: faved ? "已收藏" : "取消收藏", icon: "none" });
+  async togglePostFavorite() {
+    const post = this.data.post;
+    const postId = post && (post.id || post._id);
+    if (!postId || this.data.postActionLoading) {
+      return;
+    }
+    this.setData({ postActionLoading: true });
+    try {
+      await api.login();
+      const result = await api.toggleFavorite("post", postId, {
+        title: post.title || (post.content || "").slice(0, 40),
+        authorName: post.author?.name || "芯社区用户",
+        zoneName: this.data.zoneName || post.zoneName || "",
+        likes: Number(post.likes || 0) || 0,
+        comments: Number(post.comments || 0) || 0,
+      });
+      this.setData({ postFavorited: !!result.favorited });
+      wx.showToast({ title: result.favorited ? "已收藏" : "已取消收藏", icon: "none" });
+    } catch (error) {
+      wx.showToast({ title: error.message || "收藏失败，请稍后重试", icon: "none" });
+    } finally {
+      this.setData({ postActionLoading: false });
+    }
   },
 
   onSharePost() {
-    console.log("分享帖子");
-    wx.showToast({ title: "分享功能待接入", icon: "none" });
+    wx.showShareMenu({ withShareTicket: true, menus: ["shareAppMessage", "shareTimeline"] });
+    wx.showToast({ title: "请使用右上角转发", icon: "none" });
+  },
+
+  onMoreTap() {
+    wx.showActionSheet({
+      itemList: ["复制帖子内容", "举报内容"],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          wx.setClipboardData({ data: this.data.post?.content || "" });
+        }
+        if (res.tapIndex === 1) {
+          wx.showToast({ title: "举报入口将在后续版本开放", icon: "none" });
+        }
+      }
+    });
   },
 
   onLoadMoreComments() {
-    console.log("加载更多评论");
-    wx.showToast({ title: "已加载全部评论", icon: "none" });
+    wx.showToast({ title: "当前已加载最新评论", icon: "none" });
   },
 
   onCommentImageTap(e) {
-    console.log("预览评论图片", e.currentTarget.dataset.url);
+    const { url, commentIndex } = e.currentTarget.dataset;
+    const comment = this.data.commentList[commentIndex] || {};
+    const urls = Array.isArray(comment.images) ? comment.images : [];
+    if (!url || !urls.length) {
+      return;
+    }
+    wx.previewImage({ current: url, urls });
+  },
+
+
+  async onToggleFollow() {
+    if (this.data.isOwnPost || !this._postAuthorUserId || this.data.postActionLoading) {
+      return;
+    }
+    this.setData({ postActionLoading: true });
+    try {
+      await api.login();
+      const result = await api.toggleFollow(this._postAuthorUserId);
+      this.setData({ authorFollowed: !!result.followed });
+      wx.showToast({ title: result.followed ? "已关注" : "已取消关注", icon: "none" });
+    } catch (error) {
+      wx.showToast({ title: error.message || "关注失败，请稍后重试", icon: "none" });
+    } finally {
+      this.setData({ postActionLoading: false });
+    }
+  },
+
+  onToolbarDisabledTap() {
+    wx.showToast({ title: "当前版本暂不支持图片/附件评论", icon: "none" });
+  },
+
+  onShareAppMessage() {
+    const post = this.data.post || {};
+    return {
+      title: post.title || (post.content || "半导体社区讨论").slice(0, 28),
+      path: `/pages/post-detail/post-detail?id=${post.id || post._id || ""}`,
+    };
+  },
+
+  onShareTimeline() {
+    const post = this.data.post || {};
+    return {
+      title: post.title || (post.content || "半导体社区讨论").slice(0, 28),
+      query: `id=${post.id || post._id || ""}`,
+    };
   },
 
   // 点击楼中楼整条 → 回复此人
@@ -390,13 +542,6 @@ Page({
       inputExpanded: true,
       replyTarget: { nickname: reply.author.nickname, commentId: this.data.commentList[cidx].commentId, replyId: reply.replyId },
       inputValue: "回复 " + reply.author.nickname + "："
-    });
-  },
-
-  handleAction(event) {
-    wx.showToast({
-      title: `${event.currentTarget.dataset.name} 待接入`,
-      icon: "none"
     });
   }
 });

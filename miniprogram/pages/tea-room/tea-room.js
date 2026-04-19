@@ -1,44 +1,40 @@
+const api = require("../../utils/api");
 const { getNavMetrics } = require("../../utils/util");
 
-const MOCK_TOPICS = [
-  { topicId: "hot", name: "🔥热门" },
-  { topicId: "night-shift", name: "🌙夜班日常" },
-  { topicId: "cafeteria", name: "🍜食堂测评" },
-  { topicId: "commute", name: "🚌通勤吐槽" },
-  { topicId: "workplace", name: "💼厂区生活" },
-  { topicId: "gossip", name: "🍵行业八卦" },
-  { topicId: "salary", name: "💰薪资吐槽" },
-  { topicId: "overtime", name: "⏰加班那些事" },
-  { topicId: "otd", name: "🚀OTD见闻" },
-  { topicId: "tooling", name: "🔧设备日常" },
-  { topicId: "newbie", name: "🌱新人求助" },
-  { topicId: "funny", name: "😂开心一刻" },
-];
+function normalizeTopicText(value = "") {
+  return String(value).replace(/^#/, "").trim().toLowerCase();
+}
 
-const MOCK_MEMBER_COUNT = 50000;
-const MOCK_ONLINE_COUNT = 1200;
+function matchesTopic(post, topic) {
+  if (!post || !topic || topic.topicId === "hot") {
+    return true;
+  }
 
-function getMockPosts(topicId, page) {
-  const mockData = require("../../utils/mock-data");
-  const { postList } = mockData;
-  const pageSize = 10;
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  const sliced = postList.slice(start, end).map(p => {
-    const randomTopic = MOCK_TOPICS[Math.floor(Math.random() * (MOCK_TOPICS.length - 1)) + 1];
-    return {
-      ...p,
-      zoneId: "tea-room",
-      zoneName: "",
-      contentType: "chat",
-      title: p.title || p.content.slice(0, 40),
-      tags: [{ text: randomTopic.name, id: randomTopic.topicId }],
-    };
+  const topicText = normalizeTopicText(topic.topicName || topic.name || "");
+  if (!topicText) {
+    return true;
+  }
+
+  const tags = Array.isArray(post.tags) ? post.tags : [];
+  const matchedTag = tags.find((item) => {
+    const text =
+      typeof item === "string"
+        ? item
+        : item && typeof item === "object"
+        ? item.text || item.label || item.name || ""
+        : "";
+    return normalizeTopicText(text) === topicText;
   });
-  return {
-    data: sliced,
-    hasMore: end < postList.length,
-  };
+
+  if (matchedTag) {
+    return true;
+  }
+
+  if (post.topic?.text && normalizeTopicText(post.topic.text) === topicText) {
+    return true;
+  }
+
+  return false;
 }
 
 Page({
@@ -46,22 +42,16 @@ Page({
     statusBarHeight: 24,
     capsuleHeight: 32,
     navCapsuleInsetRight: 16,
-    // Zone info
-    memberCount: MOCK_MEMBER_COUNT,
-    onlineCount: MOCK_ONLINE_COUNT,
-    // Topics
-    topics: MOCK_TOPICS,
+    memberCount: 0,
+    onlineCount: 0,
+    topics: [],
     activeTopicId: "hot",
-    // Posts
     posts: [],
+    sourcePosts: [],
     page: 1,
     hasMore: true,
     loadingMore: false,
-    // Topic cache
-    topicCache: {},
-    // Empty
     isEmpty: false,
-    // Header collapse
     headerHeight: 200,
     headerOpacity: 1,
     topicStickyTop: 0,
@@ -69,85 +59,145 @@ Page({
 
   onLoad() {
     const metrics = getNavMetrics();
-    const topicStickyTop = metrics.statusBarHeight + metrics.capsuleHeight;
     this.setData({
       statusBarHeight: metrics.statusBarHeight,
       capsuleHeight: metrics.capsuleHeight,
       navCapsuleInsetRight: metrics.navCapsuleInsetRight,
-      topicStickyTop,
+      topicStickyTop: metrics.statusBarHeight + metrics.capsuleHeight,
     });
-    this.loadPosts(true);
+    this.bootstrapTeaRoom();
+  },
+
+  onShow() {
+    const app = getApp();
+    if (app.globalData.communityNeedsRefresh) {
+      app.globalData.communityNeedsRefresh = false;
+      this.loadTeaRoomInfo();
+      this.loadPosts(true);
+    }
+  },
+
+  async bootstrapTeaRoom() {
+    await Promise.all([
+      this.loadTeaRoomInfo(),
+      this.loadTopics(),
+      this.loadPosts(true),
+    ]);
+  },
+
+  async loadTeaRoomInfo() {
+    try {
+      const result = await api.getTeaRoomInfo();
+      const memberCount = Number(result?.memberCount || 0);
+      this.setData({
+        memberCount,
+        onlineCount: Math.max(0, Math.floor(memberCount * 0.03)),
+      });
+    } catch (error) {
+      console.error("loadTeaRoomInfo failed", error);
+    }
+  },
+
+  async loadTopics() {
+    try {
+      const result = await api.getTeaRoomTopics();
+      const topics = (result.data || []).map((item) => ({
+        topicId: item.topicId,
+        name: item.topicName || item.name,
+        topicName: item.topicName || item.name,
+      }));
+
+      this.setData({
+        topics: topics.length ? topics : [{ topicId: "hot", name: "热门", topicName: "热门" }],
+        activeTopicId: topics.find((item) => item.topicId === this.data.activeTopicId)
+          ? this.data.activeTopicId
+          : (topics[0]?.topicId || "hot"),
+      });
+    } catch (error) {
+      console.error("loadTopics failed", error);
+    }
+  },
+
+  getActiveTopic() {
+    return this.data.topics.find((item) => item.topicId === this.data.activeTopicId) || null;
+  },
+
+  applyTopicFilter(list) {
+    const activeTopic = this.getActiveTopic();
+    const filtered = (list || []).filter((item) => matchesTopic(item, activeTopic));
+    this.setData({
+      posts: filtered,
+      isEmpty: filtered.length === 0,
+    });
   },
 
   async loadPosts(reset = false) {
-    const { activeTopicId, topicCache } = this.data;
-    const cacheKey = activeTopicId;
-
     if (reset) {
-      const cached = topicCache[cacheKey];
-      if (cached) {
-        this.setData({
-          posts: cached.data,
-          page: cached.page,
-          hasMore: cached.hasMore,
-          isEmpty: cached.data.length === 0,
-          loadingMore: false,
-        });
-        return;
-      }
-      this.setData({ posts: [], page: 1, hasMore: true, isEmpty: false, loadingMore: false });
+      this.setData({
+        sourcePosts: [],
+        posts: [],
+        page: 1,
+        hasMore: true,
+        isEmpty: false,
+        loadingMore: false,
+      });
     }
 
     const nextPage = this.data.page;
     try {
-      const result = getMockPosts(activeTopicId, nextPage);
-      const newPosts = result.data;
-      const allPosts = reset ? newPosts : this.data.posts.concat(newPosts);
+      const result = await api.getZonePosts({
+        zoneId: "tea-room",
+        tab: "all",
+        sort: "latest",
+        page: nextPage,
+        size: 10,
+      });
+      const sourcePosts = reset ? result.data : this.data.sourcePosts.concat(result.data);
       this.setData({
-        posts: allPosts,
+        sourcePosts,
         page: nextPage + 1,
         hasMore: result.hasMore,
-        isEmpty: allPosts.length === 0,
         loadingMore: false,
       });
-
-      if (reset) {
-        topicCache[cacheKey] = { data: allPosts, page: nextPage + 1, hasMore: result.hasMore };
-      } else if (topicCache[cacheKey]) {
-        topicCache[cacheKey].data = allPosts;
-        topicCache[cacheKey].page = nextPage + 1;
-        topicCache[cacheKey].hasMore = result.hasMore;
-      }
-      this.setData({ topicCache });
+      this.applyTopicFilter(sourcePosts);
     } catch (error) {
       console.error("loadPosts failed", error);
       this.setData({ loadingMore: false });
+      wx.showToast({ title: "茶水间加载失败", icon: "none" });
     }
   },
 
-  onPageScroll(e) {
-    const scrollTop = e.scrollTop;
-    const headerFullHeight = 200;
-    const progress = Math.min(scrollTop / headerFullHeight, 1);
-    const headerHeight = headerFullHeight * (1 - progress);
-    const headerOpacity = Math.max(0, 1 - progress * 1.5);
-    this.setData({ headerHeight, headerOpacity });
+  onPageScroll(event) {
+    const scrollTop = event.scrollTop;
+    const progress = Math.min(scrollTop / 200, 1);
+    this.setData({
+      headerHeight: 200 * (1 - progress),
+      headerOpacity: Math.max(0, 1 - progress * 1.5),
+    });
   },
 
   onTopicTap(event) {
     const topicId = event.currentTarget.dataset.topicid;
-    if (topicId === this.data.activeTopicId) return;
+    if (topicId === this.data.activeTopicId) {
+      return;
+    }
     this.setData({ activeTopicId: topicId });
-    this.loadPosts(true);
+    this.applyTopicFilter(this.data.sourcePosts);
   },
 
   async onPullDownRefresh() {
-    await this.loadPosts(true);
+    await Promise.all([
+      this.loadTeaRoomInfo(),
+      this.loadTopics(),
+      this.loadPosts(true),
+    ]);
     wx.stopPullDownRefresh();
   },
 
   async onReachBottom() {
-    if (!this.data.hasMore || this.data.loadingMore) return;
+    if (!this.data.hasMore || this.data.loadingMore) {
+      return;
+    }
     this.setData({ loadingMore: true });
     await this.loadPosts();
   },
@@ -157,12 +207,10 @@ Page({
   },
 
   onSearchTap() {
-    console.log("茶水间搜索");
+    wx.navigateTo({ url: "/pages/search/search?zoneId=tea-room" });
   },
 
-  onMoreTap() {
-    console.log("茶水间更多");
-  },
+  onMoreTap() {},
 
   onPostTap(event) {
     const postId = event.detail.id;
@@ -174,6 +222,6 @@ Page({
   },
 
   onEmptyAction() {
-    console.log("来发第一条动态吧");
+    this.onFabTap();
   },
 });

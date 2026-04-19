@@ -87,7 +87,7 @@
 
       <view class="section-header">
         <view class="section-title">今日热点</view>
-        <view class="section-link">更多 ></view>
+        <view class="section-link" bindtap="handleSearch">更多 ></view>
       </view>
       <view class="news-stream">
         <!-- === STEP 1.4 修改开始：推荐 Tab 使用 ContentCard === -->
@@ -104,7 +104,7 @@
     <swiper-item class="swiper-item">
       <view class="section-header">
         <view class="section-title">行业资讯</view>
-        <view class="section-link">更多 ></view>
+        <view class="section-link" bindtap="handleSearch">更多 ></view>
       </view>
       <view class="news-stream">
         <block wx:for="{{activeTab === 'industry' ? newsList : []}}" wx:key="id">
@@ -126,6 +126,13 @@
 
     <!-- Tab 4: 茶水间 -->
     <swiper-item class="swiper-item">
+      <view class="section-header tearoom-entry-header">
+        <view>
+          <view class="section-title">晶圆茶水间</view>
+          <view class="section-link">匿名闲聊、厂区日常、轻松吐槽</view>
+        </view>
+        <view class="empty-btn tearoom-entry-btn" bindtap="goToTeaRoom">进入茶水间</view>
+      </view>
       <scroll-view class="topic-scroll" scroll-x="true" enable-flex="true" show-scrollbar="{{false}}">
         <view class="tearoom-topic-row">
           <view

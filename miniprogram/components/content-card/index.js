@@ -25,6 +25,15 @@ Component({
       if (!item) return;
       const ct = CONTENT_TYPE_MAP[item.contentType] || CONTENT_TYPE_MAP.discuss;
       const author = item.author || {};
+      const firstTag = Array.isArray(item.tags) && item.tags.length ? item.tags[0] : null;
+      const topicTagText =
+        typeof firstTag === "string"
+          ? firstTag.replace(/^#/, "")
+          : firstTag && typeof firstTag === "object"
+          ? String(firstTag.text || firstTag.label || firstTag.name || "").replace(/^#/, "")
+          : item.topic && item.topic.text
+          ? String(item.topic.text).replace(/^#/, "")
+          : "";
       this.setData({
         typeLabel: ct.label,
         typeBg: ct.bg,
@@ -37,7 +46,8 @@ Component({
         relativeTime: formatRelative(item.time || item.createdAt),
         viewCount: formatCount(item.views || 0),
         commentCount: formatCount(item.comments || item.commentCount || 0),
-        likeCount: formatCount(item.likes || item.likeCount || 0)
+        likeCount: formatCount(item.likes || item.likeCount || 0),
+        topicTagText
       });
     }
   },
@@ -54,7 +64,8 @@ Component({
     relativeTime: "",
     viewCount: "0",
     commentCount: "0",
-    likeCount: "0"
+    likeCount: "0",
+    topicTagText: ""
   },
 
   methods: {

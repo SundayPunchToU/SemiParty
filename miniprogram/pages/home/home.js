@@ -103,12 +103,6 @@ Page({
     wx.navigateTo({ url: "/pages/search/search" });
   },
 
-  handleQuickNav(event) {
-    wx.showToast({
-      title: `${event.detail.item.label} 待接入`,
-      icon: "none"
-    });
-  },
 
   // === STEP 1.2 修改开始：Tab 切换联动 Swiper ===
   async handleTabChange(event) {
@@ -184,6 +178,10 @@ Page({
     this.setData({ activeTeaRoomTopic: topic });
   },
 
+  goToTeaRoom() {
+    wx.navigateTo({ url: "/pages/tea-room/tea-room" });
+  },
+
   onTeaRoomFabTap() {
     wx.navigateTo({ url: "/pages/post-create/post-create?zoneId=tea-room&isAnonymous=true" });
   },
@@ -194,7 +192,7 @@ Page({
   },
 
   onNoticeTap() {
-    console.log('点击公告');
+    wx.switchTab({ url: '/pages/community/community' });
   },
 
   onBannerChange(event) {
@@ -203,12 +201,41 @@ Page({
 
   onBannerTap(event) {
     const id = event.currentTarget.dataset.id;
-    console.log('点击横幅', id);
+    if (id === 'b1') {
+      wx.navigateTo({ url: '/pages/job-market/job-market' });
+      return;
+    }
+    if (id === 'b2') {
+      wx.navigateTo({ url: '/pages/search/search?keyword=行业峰会' });
+      return;
+    }
+    wx.switchTab({ url: '/pages/community/community' });
   },
 
   onShortcutTap(event) {
     const label = event.currentTarget.dataset.label;
-    console.log('点击了', label);
+    const routeMap = {
+      热门招聘: '/pages/job-market/job-market',
+      校招专区: '/pages/job-market/job-market',
+      企业主页: '/pages/community/community'
+    };
+    const searchMap = {
+      知识库: '知识',
+      供需大厅: '供应链'
+    };
+
+    if (routeMap[label]) {
+      if (routeMap[label].includes('/pages/community/community')) {
+        wx.switchTab({ url: routeMap[label] });
+      } else {
+        wx.navigateTo({ url: routeMap[label] });
+      }
+      return;
+    }
+
+    if (searchMap[label]) {
+      wx.navigateTo({ url: `/pages/search/search?keyword=${searchMap[label]}` });
+    }
   }
   // === STEP 1.3 修改结束 ===
 });

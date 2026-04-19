@@ -40,12 +40,36 @@ function shouldUseMock() {
   return !canUseCloud() || !!appState.useMock;
 }
 
-async function execute(cloudTask, mockTask) {
+function shouldFallbackToMockOnError(error) {
+  const message = String(error?.errMsg || error?.message || error || "");
+  return (
+    message.includes("-501000") ||
+    message.includes("-504002") ||
+    message.includes("-502005") ||
+    /functionname parameter could not be found/i.test(message) ||
+    /function not found/i.test(message) ||
+    /timeout/i.test(message) ||
+    /database collection not exists/i.test(message) ||
+    /resourcenotfound/i.test(message) ||
+    /db or table not exist/i.test(message)
+  );
+}
+
+async function execute(cloudTask, mockTask, options = {}) {
+  const { fallbackOnCloudError = false } = options;
   if (shouldUseMock()) {
     return mockTask();
   }
 
-  return cloudTask();
+  try {
+    return await cloudTask();
+  } catch (error) {
+    if (fallbackOnCloudError && typeof mockTask === "function" && shouldFallbackToMockOnError(error)) {
+      console.warn("cloud task unavailable, fallback to mock", error);
+      return mockTask();
+    }
+    throw error;
+  }
 }
 
 function paginate(list, page = 1, pageSize = 4) {
@@ -91,6 +115,439 @@ function normalizePostArgs(arg1, arg2) {
     page: arg2 || 1,
     pageSize: PAGE_SIZE,
   };
+}
+
+function safeNumber(value, fallback = 0) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function getPrimaryTag(tags = []) {
+  if (!Array.isArray(tags) || !tags.length) {
+    return null;
+  }
+
+  const first = tags[0];
+  if (typeof first === "string") {
+    return { text: first, type: "blue" };
+  }
+
+  if (first && typeof first === "object") {
+    const text = String(first.text || first.label || first.name || "").trim();
+    if (!text) {
+      return null;
+    }
+    return {
+      text,
+      type: first.type || "blue",
+    };
+  }
+
+  return null;
+}
+
+function normalizeTags(tags = [], topic = null) {
+  if (Array.isArray(tags) && tags.length > 0) {
+    return tags
+      .map((item) => {
+        if (typeof item === "string") {
+          return item.trim();
+        }
+        if (item && typeof item === "object") {
+          return String(item.text || item.label || item.name || "").trim();
+        }
+        return "";
+      })
+      .filter(Boolean);
+  }
+
+  if (topic && typeof topic === "object" && topic.text) {
+    return [String(topic.text).trim()].filter(Boolean);
+  }
+
+  return [];
+}
+
+function extractPostTitle(record = {}, content = "") {
+  const explicitTitle = String(record.title || "").trim();
+  if (explicitTitle) {
+    return explicitTitle;
+  }
+
+  const source = String(content || "").replace(/\s+/g, " ").trim();
+  if (!source) {
+    return "";
+  }
+
+  return source.slice(0, 36);
+}
+
+function normalizePostAuthor(record = {}, isAnonymous = false) {
+  const nickname =
+    record.nickname ||
+    record.name ||
+    record.nickName ||
+    (isAnonymous ? "匿名用户" : "用户");
+  const avatar = record.avatar || record.avatarUrl || "";
+  const avatarText =
+    record.avatarText ||
+    (nickname ? String(nickname).slice(0, 1) : "U");
+  const company = record.company || "";
+  const roleLabel = record.roleLabel || record.role || "";
+  const titleText = record.title || "";
+
+  return {
+    userId: record.userId || record.uid || record.openid || "",
+    uid: record.uid || record.userId || record.openid || "",
+    nickname,
+    name: nickname,
+    avatar,
+    avatarUrl: avatar,
+    avatarText,
+    avatarBg: record.avatarBg || "#DCE8FF",
+    avatarColor: record.avatarColor || "#165DC6",
+    roleLabel,
+    role: roleLabel,
+    company,
+    title: titleText,
+    experience: record.experience || "",
+  };
+}
+
+function normalizePost(record) {
+  if (!record) {
+    return null;
+  }
+
+  const content = String(record.content || "").trim();
+  const tags = normalizeTags(record.tags, record.topic);
+  const topic = record.topic || getPrimaryTag(tags);
+  const isAnonymous = Boolean(
+    record.isAnonymous !== undefined ? record.isAnonymous : record.anonymous
+  );
+  const author = normalizePostAuthor(record.author || {}, isAnonymous);
+  const title = extractPostTitle(record, content);
+  const likeCount = safeNumber(record.likeCount, safeNumber(record.likes, 0));
+  const commentCount = safeNumber(record.commentCount, safeNumber(record.comments, 0));
+  const viewCount = safeNumber(record.viewCount, safeNumber(record.views, 0));
+  const zoneId = record.zoneId || "";
+  const zoneName = record.zoneName || "";
+  const contentType = record.contentType || "discuss";
+  const id = record._id || record.id;
+
+  return {
+    ...record,
+    _id: id,
+    id,
+    uid: record.uid || author.uid || author.userId || "",
+    userId: record.userId || author.userId || author.uid || "",
+    zoneId,
+    zoneName,
+    contentType,
+    category: record.category || "hot",
+    title,
+    content,
+    tags,
+    topic,
+    isAnonymous,
+    anonymous: isAnonymous,
+    author,
+    likeCount,
+    commentCount,
+    viewCount,
+    likes: likeCount,
+    comments: commentCount,
+    views: viewCount,
+    likedOpenids: Array.isArray(record.likedOpenids) ? record.likedOpenids : [],
+    commentsList: Array.isArray(record.commentsList) ? record.commentsList : [],
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt || record.createdAt,
+  };
+}
+
+const ZONE_TAB_FALLBACK_MAP = {
+  company: [
+    { tabKey: "all", tabName: "全部" },
+    { tabKey: "discuss", tabName: "讨论" },
+    { tabKey: "qa", tabName: "问答" },
+    { tabKey: "recruit", tabName: "招聘" },
+    { tabKey: "news", tabName: "资讯" },
+    { tabKey: "best", tabName: "精华" },
+  ],
+  role: [
+    { tabKey: "all", tabName: "全部" },
+    { tabKey: "discuss", tabName: "讨论" },
+    { tabKey: "qa", tabName: "问答" },
+    { tabKey: "recruit", tabName: "招聘" },
+    { tabKey: "news", tabName: "资讯" },
+    { tabKey: "best", tabName: "精华" },
+  ],
+  tech: [
+    { tabKey: "all", tabName: "全部" },
+    { tabKey: "discuss", tabName: "讨论" },
+    { tabKey: "qa", tabName: "问答" },
+    { tabKey: "paper", tabName: "论文" },
+    { tabKey: "project", tabName: "项目" },
+    { tabKey: "best", tabName: "精华" },
+  ],
+  campus: [
+    { tabKey: "all", tabName: "全部" },
+    { tabKey: "discuss", tabName: "讨论" },
+    { tabKey: "qa", tabName: "问答" },
+    { tabKey: "recruit", tabName: "校招" },
+    { tabKey: "interview", tabName: "面经" },
+    { tabKey: "best", tabName: "精华" },
+  ],
+  supply: [
+    { tabKey: "all", tabName: "全部" },
+    { tabKey: "discuss", tabName: "讨论" },
+    { tabKey: "demand", tabName: "供需" },
+    { tabKey: "recruit", tabName: "招聘" },
+    { tabKey: "news", tabName: "资讯" },
+    { tabKey: "best", tabName: "精华" },
+  ],
+  region: [
+    { tabKey: "all", tabName: "全部" },
+    { tabKey: "discuss", tabName: "讨论" },
+    { tabKey: "qa", tabName: "问答" },
+    { tabKey: "recruit", tabName: "招聘" },
+    { tabKey: "news", tabName: "资讯" },
+    { tabKey: "best", tabName: "精华" },
+  ],
+  special: [
+    { tabKey: "hot", tabName: "热门" },
+    { tabKey: "all", tabName: "全部" },
+  ],
+};
+
+const TEA_ROOM_TOPIC_FALLBACKS = [
+  { topicId: "hot", topicName: "热门" },
+  { topicId: "night-shift", topicName: "#夜班日常" },
+  { topicId: "canteen", topicName: "#食堂测评" },
+  { topicId: "commute", topicName: "#通勤吐槽" },
+  { topicId: "gossip", topicName: "#行业八卦" },
+  { topicId: "fab-life", topicName: "#厂区生活" },
+  { topicId: "job-hop", topicName: "#跳槽故事" },
+];
+
+function normalizeZoneTab(tab = {}) {
+  const tabKey = tab.tabKey || tab.key || "";
+  const tabName = tab.tabName || tab.name || tab.label || "";
+  return {
+    tabKey,
+    tabName,
+  };
+}
+
+function getZoneTabFallback(category = "company") {
+  return deepClone(ZONE_TAB_FALLBACK_MAP[category] || ZONE_TAB_FALLBACK_MAP.company);
+}
+
+function normalizeZone(record) {
+  if (!record) {
+    return null;
+  }
+
+  const zoneId = record.zoneId || record._id || record.id || "";
+  const category = record.category || (zoneId === "tea-room" ? "special" : "company");
+  const tabs =
+    Array.isArray(record.tabs) && record.tabs.length
+      ? record.tabs.map(normalizeZoneTab).filter((item) => item.tabKey)
+      : getZoneTabFallback(category);
+
+  return {
+    ...record,
+    id: zoneId,
+    zoneId,
+    zoneName: record.zoneName || record.name || "",
+    zoneDesc: record.zoneDesc || record.description || "",
+    zoneIcon: record.zoneIcon || record.icon || "",
+    zoneBanner: record.zoneBanner || record.banner || "",
+    category,
+    memberCount: safeNumber(record.memberCount),
+    todayPostCount: safeNumber(record.todayPostCount, safeNumber(record.todayPosts, 0)),
+    totalPostCount: safeNumber(record.totalPostCount),
+    isJoined: Boolean(record.isJoined),
+    isSpecial: Boolean(record.isSpecial || category === "special" || zoneId === "tea-room"),
+    tabs,
+    pinnedPosts: Array.isArray(record.pinnedPosts) ? record.pinnedPosts : [],
+    hasNewContent: Boolean(
+      record.hasNewContent !== undefined ? record.hasNewContent : record.hasNew
+    ),
+    joinedAt: record.joinedAt || null,
+    status: record.status || "active",
+  };
+}
+
+function normalizeTeaRoomTopic(topic = {}) {
+  const topicId = topic.topicId || topic.id || topic.key || "";
+  const topicName = topic.topicName || topic.name || topic.label || "";
+  return {
+    ...topic,
+    topicId,
+    topicName,
+    name: topicName,
+    postCount: safeNumber(topic.postCount),
+  };
+}
+
+function getMockZoneCatalog() {
+  const zoneData = require("./mock-zone-data");
+  const catalog = Object.entries(zoneData.zonesByCategory || {}).flatMap(([category, list]) =>
+    (list || []).map((zone) =>
+      normalizeZone({
+        ...zone,
+        category,
+      })
+    )
+  );
+
+  if (!catalog.find((item) => item.zoneId === "tea-room")) {
+    catalog.unshift(
+      normalizeZone({
+        zoneId: "tea-room",
+        zoneName: "晶圆茶水间",
+        zoneDesc: "半导体从业者的轻社交讨论区",
+        category: "special",
+        memberCount: 50000,
+        todayPostCount: 320,
+        totalPostCount: 18500,
+      })
+    );
+  }
+
+  return catalog;
+}
+
+function getMockZoneById(zoneId) {
+  return getMockZoneCatalog().find((item) => item.zoneId === zoneId) || null;
+}
+
+function getMockUserZoneList() {
+  const zoneData = require("./mock-zone-data");
+  const zoneMap = getMockZoneCatalog().reduce((acc, zone) => {
+    acc[zone.zoneId] = zone;
+    return acc;
+  }, {});
+
+  return (zoneData.myZones || []).map((item) =>
+    normalizeZone({
+      ...(zoneMap[item.zoneId] || {}),
+      ...item,
+      zoneId: item.zoneId,
+      zoneName: item.zoneName || zoneMap[item.zoneId]?.zoneName || "",
+    })
+  );
+}
+
+function resolveMockZoneByCategory(category) {
+  return getMockZoneCatalog().filter((item) => item.category === category);
+}
+
+function sortPosts(list, sort) {
+  const factor = sort === "hot" ? "likeCount" : sort === "reply" ? "commentCount" : "createdAt";
+  const getSortValue = (item) => {
+    if (factor === "createdAt") {
+      return new Date(item.createdAt || 0).getTime();
+    }
+    return safeNumber(item[factor], 0);
+  };
+  return list.slice().sort((left, right) => getSortValue(right) - getSortValue(left));
+}
+
+function getMockZonePostResult({ zoneId, tab = "all", sort = "latest", page = 1, size = 20 }) {
+  const zone = getMockZoneById(zoneId) || normalizeZone({ zoneId });
+  const topicSeeds = TEA_ROOM_TOPIC_FALLBACKS.slice(1);
+  const basePosts = deepClone(mockData.postList)
+    .map((item, index) => {
+      const fallbackTopic = topicSeeds[index % topicSeeds.length] || TEA_ROOM_TOPIC_FALLBACKS[0];
+      const sourceTags = Array.isArray(item.tags) && item.tags.length ? item.tags : [];
+      const tags =
+        zoneId === "tea-room"
+          ? [fallbackTopic.topicName]
+          : sourceTags.length
+          ? sourceTags
+          : item.topic?.text
+          ? [item.topic.text]
+          : [];
+
+      const contentType =
+        zoneId === "tea-room"
+          ? "chat"
+          : tab !== "all" && tab !== "best" && tab !== "hot"
+          ? tab
+          : item.contentType || "discuss";
+
+      return normalizePost({
+        ...item,
+        _id: item._id || item.id || `${zoneId}_mock_${index}`,
+        id: item._id || item.id || `${zoneId}_mock_${index}`,
+        zoneId,
+        zoneName: zone.zoneName,
+        category: zone.category,
+        contentType,
+        tags,
+        isBest: index % 4 === 0,
+      });
+    })
+    .filter(Boolean);
+
+  let list = basePosts;
+  if (tab === "best") {
+    list = list.filter((item) => item.isBest);
+  } else if (tab !== "all" && tab !== "hot") {
+    list = list.filter((item) => item.contentType === tab);
+  }
+
+  const sorted = sortPosts(list, sort);
+  const start = (page - 1) * size;
+  const data = sorted.slice(start, start + size);
+
+  return {
+    posts: data,
+    total: sorted.length,
+    page,
+    size,
+  };
+}
+
+function createEmptyUnreadSummary() {
+  return {
+    privateUnread: 0,
+    groupUnread: 0,
+    totalUnread: 0,
+    hasUnread: false,
+  };
+}
+
+function getLiveTabBar() {
+  try {
+    const pages = getCurrentPages();
+    const currentPage = pages[pages.length - 1];
+    if (currentPage && typeof currentPage.getTabBar === "function") {
+      return currentPage.getTabBar();
+    }
+  } catch (error) {
+    console.warn("get live tabbar failed", error);
+  }
+  return null;
+}
+
+function publishUnreadSummary(summary = createEmptyUnreadSummary()) {
+  const appState = getAppState();
+  appState.unreadSummary = {
+    ...createEmptyUnreadSummary(),
+    ...summary,
+  };
+
+  const tabBar = getLiveTabBar();
+  if (tabBar && typeof tabBar.setData === "function") {
+    tabBar.setData({
+      "list[2].unreadCount": appState.unreadSummary.totalUnread || 0,
+    });
+  }
+
+  return appState.unreadSummary;
 }
 
 function normalizeJob(record) {
@@ -152,14 +609,35 @@ function normalizeUserProfile(record) {
     return null;
   }
 
+  const nickname = record.nickname || record.nickName || record.name || "用户";
+  const role = record.role || record.roleLabel || record.primaryRole || "";
+  const bio = record.bio || record.summary || "";
+  const experience = record.experience || "";
+  const stats = record.stats || {};
+
   return {
     ...record,
-    avatarText: record.avatarText || record.nickName?.slice(0, 1) || "U",
+    nickname,
+    nickName: record.nickName || nickname,
+    role,
+    bio,
+    experience,
+    avatarText: record.avatarText || nickname.slice(0, 1) || "U",
     title:
-      record.title && record.experience
-        ? `${record.title} · ${record.experience}`
+      record.title && experience
+        ? `${record.title} · ${experience}`
         : record.title || "",
     jobStatus: JOB_STATUS_LABELS[record.jobStatus] || record.jobStatus || "在看机会",
+    stats: {
+      postCount: stats.postCount || record.postCount || 0,
+      followerCount: stats.followerCount || record.followerCount || 0,
+      followingCount: stats.followingCount || record.followingCount || 0,
+      likeReceivedCount: stats.likeReceivedCount || record.likedCount || 0,
+      favoriteCount: stats.favoriteCount || record.collectCount || 0,
+      ...stats,
+    },
+    joinedZones: record.joinedZones || [],
+    badges: record.badges || [],
   };
 }
 
@@ -169,9 +647,13 @@ function normalizeChat(record, currentUid = "") {
   }
 
   if (!record.participants) {
+    const unreadCount = safeNumber(record.unreadCount, safeNumber(record.unread, 0));
     return {
       ...record,
       id: record.id || record._id,
+      chatId: record.chatId || record.id || record._id,
+      unread: unreadCount,
+      unreadCount,
     };
   }
 
@@ -181,11 +663,12 @@ function normalizeChat(record, currentUid = "") {
     {};
 
   const unreadMap = record.unreadMap || {};
-  const unread = unreadMap[currentUid] || 0;
+  const unread = safeNumber(unreadMap[currentUid], 0);
   const avatarShape = record.type === "group" || record.type === "system" ? "rounded" : "circle";
 
   return {
     id: record._id || record.id,
+    chatId: record._id || record.id,
     type: record.type || "private",
     name: otherProfile.name || (record.type === "system" ? "系统通知" : "新会话"),
     avatarText: otherProfile.avatarText || (record.type === "group" ? "群" : record.type === "system" ? "系" : "聊"),
@@ -195,6 +678,7 @@ function normalizeChat(record, currentUid = "") {
     lastMessage: record.lastMessage || "暂无消息",
     time: formatChatTime(record.lastMessageAt || record.updatedAt || record.createdAt),
     unread,
+    unreadCount: unread,
     participantProfiles: record.participantProfiles || [],
   };
 }
@@ -342,11 +826,14 @@ module.exports = {
   },
 
   async updateUser(field, value) {
+    const isPatchObject = field && typeof field === "object" && !Array.isArray(field);
+    const payload = isPatchObject ? field : { [field]: value };
+
     return execute(
       async () => {
         const res = await wx.cloud.callFunction({
           name: "updateUser",
-          data: { field, value },
+          data: isPatchObject ? { payload } : { field, value },
         });
         const data = normalizeUserProfile(res.result.data);
         getAppState().userInfo = data;
@@ -355,11 +842,16 @@ module.exports = {
       },
       async () => {
         await delay();
-        const profile = normalizeUserProfile(mockData.userProfile);
+        const current = normalizeUserProfile(getAppState().userProfile || mockData.userProfile);
+        const profile = normalizeUserProfile({
+          ...current,
+          ...payload,
+        });
         getAppState().userInfo = profile;
         getAppState().userProfile = profile;
         return { success: true, data: profile };
-      }
+      },
+      { fallbackOnCloudError: true }
     );
   },
 
@@ -384,19 +876,71 @@ module.exports = {
         getAppState().userInfo = data;
         getAppState().userProfile = data;
         return data;
-      }
+      },
+      { fallbackOnCloudError: true }
     );
   },
+
+  async getMyPosts({ page = 1, pageSize = 20 } = {}) {
+    return execute(
+      async () => {
+        const { openid } = await ensureLogin();
+        const db = getDb();
+        let res = await db
+          .collection("posts")
+          .where({ uid: openid })
+          .orderBy("createdAt", "desc")
+          .skip((page - 1) * pageSize)
+          .limit(pageSize)
+          .get();
+
+        if (!res.data.length) {
+          res = await db
+            .collection("posts")
+            .where({ userId: openid })
+            .orderBy("createdAt", "desc")
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
+            .get();
+        }
+
+        return {
+          data: res.data.map(normalizePost).filter(Boolean),
+          hasMore: res.data.length === pageSize,
+        };
+      },
+      async () => {
+        await delay(60);
+        const { myPosts = [] } = require("../mock/profileData");
+        return {
+          data: myPosts
+            .map((item, index) =>
+              normalizePost({
+                ...item,
+                _id: item.postId || `mock_my_post_${index}`,
+                id: item.postId || `mock_my_post_${index}`,
+              })
+            )
+            .filter(Boolean),
+          hasMore: false,
+        };
+      },
+      { fallbackOnCloudError: true }
+    );
+  },
+
 
   async getNewsList(arg1 = "recommend", arg2 = 1) {
     const { category, sort, page, pageSize } = normalizeNewsArgs(arg1, arg2);
     return execute(
       async () => {
-        let query = getDb().collection("news");
+        const db = getDb();
+        const _ = db.command;
+        let query = db.collection("news").where({ _id: _.neq(null) });
         if (category === "hot") {
-          query = query.where({ isHot: true });
+          query = query.where({ _id: _.neq(null), isHot: true });
         } else if (category !== "all" && category !== "recommend") {
-          query = query.where({ category });
+          query = query.where({ _id: _.neq(null), category });
         }
         const res = await query
           .orderBy(sort, "desc")
@@ -434,7 +978,8 @@ module.exports = {
         }));
         // === STEP 1.4 修改结束 ===
         return result;
-      }
+      },
+      { fallbackOnCloudError: true }
     );
   },
 
@@ -453,7 +998,8 @@ module.exports = {
         return deepClone(
           mockData.newsList.find((item) => item.id === id) || mockData.newsList[0]
         );
-      }
+      },
+      { fallbackOnCloudError: true }
     );
   },
 
@@ -461,6 +1007,8 @@ module.exports = {
     const { category, topic, page, pageSize } = normalizePostArgs(arg1, arg2);
     return execute(
       async () => {
+        const db = getDb();
+        const _ = db.command;
         const filter = {};
         if (category !== "hot") {
           filter.category = category;
@@ -468,15 +1016,20 @@ module.exports = {
         if (topic) {
           filter["topic.text"] = topic;
         }
-        const res = await getDb()
-          .collection("posts")
-          .where(filter)
+        let query = db.collection("posts").where({ _id: _.neq(null) });
+        if (Object.keys(filter).length) {
+          query = query.where({
+            _id: _.neq(null),
+            ...filter,
+          });
+        }
+        const res = await query
           .orderBy("createdAt", "desc")
           .skip((page - 1) * pageSize)
           .limit(pageSize)
           .get();
         return {
-          data: res.data.map((item) => ({ ...item, id: item._id || item.id })),
+          data: res.data.map(normalizePost).filter(Boolean),
           hasMore: res.data.length === pageSize,
         };
       },
@@ -486,8 +1039,13 @@ module.exports = {
           category === "hot"
             ? mockData.postList
             : mockData.postList.filter((item) => item.category === category);
-        return paginate(list, page);
-      }
+        const result = paginate(list, page);
+        return {
+          ...result,
+          data: result.data.map(normalizePost).filter(Boolean),
+        };
+      },
+      { fallbackOnCloudError: true }
     );
   },
 
@@ -513,7 +1071,7 @@ module.exports = {
           mockData.postList.find((item) => item.id === id) || mockData.postList[0]
         );
       }
-    );
+    ).then((post) => normalizePost(post));
   },
 
   async createPost(data) {
@@ -523,29 +1081,65 @@ module.exports = {
           name: "createPost",
           data,
         });
-        return res.result;
+        return {
+          ...res.result,
+          data: normalizePost(res.result?.data),
+        };
       },
       async () => {
         await delay(120);
-        // Step 2.4: resolve zoneName from zoneId for mock mode
         let zoneName = "";
+        let category = "hot";
         if (data.zoneId) {
           try {
             const zoneData = require("./mock-zone-data");
-            const allZones = Object.values(zoneData.zonesByCategory || {}).flat();
+            const allZones = Object.entries(zoneData.zonesByCategory || {}).flatMap(([zoneCategory, list]) =>
+              (list || []).map((zone) => ({ ...zone, _category: zoneCategory }))
+            );
             const found = allZones.find(z => z.zoneId === data.zoneId);
-            if (found) zoneName = found.zoneName;
+            if (found) {
+              zoneName = found.zoneName;
+              category = found._category || category;
+            }
             if (data.zoneId === "tea-room") zoneName = "晶圆茶水间";
           } catch (e) {}
         }
+        if (data.zoneId === "tea-room") {
+          zoneName = "茶水间";
+          category = "special";
+        }
+        const mockId = `post_${Date.now()}`;
+        const createdAt = new Date().toISOString();
         return {
           success: true,
-          data: {
-            id: `post_${Date.now()}`,
+          data: normalizePost({
+            _id: mockId,
+            id: mockId,
             ...data,
             zoneName,
+            category,
+            contentType: data.contentType || "discuss",
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            author: {
+              userId: "mock_openid",
+              uid: "mock_openid",
+              nickname: data.isAnonymous ? "匿名用户" : "SemiParty 用户",
+              name: data.isAnonymous ? "匿名用户" : "SemiParty 用户",
+              avatarText: data.isAnonymous ? "匿" : "S",
+              avatarBg: "#DCE8FF",
+              avatarColor: "#165DC6",
+              title: data.isAnonymous ? "匿名发布" : "社区成员",
+            },
             isAnonymous: !!data.isAnonymous,
-          },
+            likeCount: 0,
+            commentCount: 0,
+            viewCount: 0,
+            likes: 0,
+            comments: 0,
+            views: 0,
+            createdAt,
+            updatedAt: createdAt,
+          }),
         };
       }
     );
@@ -802,10 +1396,39 @@ module.exports = {
         await delay(100);
         const state = getMockState();
         return {
-          data: state.chats.filter((item) => item.type === type).map((item) => ({ ...item })),
+          data: state.chats
+            .filter((item) => item.type === type)
+            .map((item) => normalizeChat(item))
+            .filter(Boolean),
         };
       }
     );
+  },
+
+  async getUnreadSummary() {
+    try {
+      const [privateRes, groupRes] = await Promise.all([
+        module.exports.getChatList("private"),
+        module.exports.getChatList("group"),
+      ]);
+      const privateUnread = (privateRes.data || []).reduce(
+        (sum, item) => sum + safeNumber(item.unreadCount, item.unread),
+        0
+      );
+      const groupUnread = (groupRes.data || []).reduce(
+        (sum, item) => sum + safeNumber(item.unreadCount, item.unread),
+        0
+      );
+      return publishUnreadSummary({
+        privateUnread,
+        groupUnread,
+        totalUnread: privateUnread + groupUnread,
+        hasUnread: privateUnread + groupUnread > 0,
+      });
+    } catch (error) {
+      console.warn("getUnreadSummary failed", error);
+      return publishUnreadSummary(createEmptyUnreadSummary());
+    }
   },
 
   async getMessages(chatId, page = 1, pageSize = 50) {
@@ -837,6 +1460,7 @@ module.exports = {
           name: "sendMessage",
           data: { chatId, content, type },
         });
+        module.exports.getUnreadSummary().catch(() => {});
         return res.result;
       },
       async () => {
@@ -867,6 +1491,7 @@ module.exports = {
         }
         persistMockState();
         await delay(80);
+        module.exports.getUnreadSummary().catch(() => {});
         return { success: true, data: message };
       }
     );
@@ -880,6 +1505,7 @@ module.exports = {
           name: "createChat",
           data: { targetUid, type: "private" },
         });
+        module.exports.getUnreadSummary().catch(() => {});
         return res.result;
       },
       async () => {
@@ -888,9 +1514,13 @@ module.exports = {
         if (!targetUid) {
           throw new Error("targetUid is required");
         }
-        return {
+        const result = {
           success: true,
           ...createMockChatRecord(targetUid),
+        };
+        module.exports.getUnreadSummary().catch(() => {});
+        return {
+          ...result,
         };
       }
     );
@@ -928,11 +1558,13 @@ module.exports = {
           name: "markChatRead",
           data: { chatId },
         });
+        module.exports.getUnreadSummary().catch(() => {});
         return res.result;
       },
       async () => {
         await delay(60);
         markMockChatRead(chatId);
+        module.exports.getUnreadSummary().catch(() => {});
         return { success: true };
       }
     );
@@ -942,6 +1574,7 @@ module.exports = {
     const app = getApp();
     if (app.resetMockState) {
       app.resetMockState();
+      module.exports.getUnreadSummary().catch(() => {});
       return { success: true };
     }
 
@@ -950,6 +1583,7 @@ module.exports = {
       chats: deepClone(mockData.chatList),
       chatMessages: {},
     };
+    module.exports.getUnreadSummary().catch(() => {});
     return { success: true };
   },
 
@@ -1026,7 +1660,7 @@ module.exports = {
             success: true,
             data: {
               news: (result.data?.news || []).map((item) => ({ ...item, id: item._id || item.id })),
-              posts: (result.data?.posts || []).map((item) => ({ ...item, id: item._id || item.id })),
+              posts: (result.data?.posts || []).map(normalizePost).filter(Boolean),
               jobs: (result.data?.jobs || []).map(normalizeJob).filter(Boolean),
               talents: (result.data?.talents || []).map(normalizeTalent).filter(Boolean),
             },
@@ -1045,7 +1679,7 @@ module.exports = {
         if (normalizedType === "post") {
           return {
             success: true,
-            data: (result.data || []).map((item) => ({ ...item, id: item._id || item.id })),
+            data: (result.data || []).map(normalizePost).filter(Boolean),
             hasMore: result.hasMore || false,
           };
         }
@@ -1067,7 +1701,7 @@ module.exports = {
       async () => {
         await delay(100);
         const news = searchMockList(mockData.newsList, keyword, ["title", "source", "content"]);
-        const posts = searchMockList(mockData.postList, keyword, ["content", "category"]);
+        const posts = searchMockList(mockData.postList, keyword, ["content", "category"]).map(normalizePost).filter(Boolean);
         const jobs = searchMockList(mockData.jobList, keyword, ["title", "company", "city", "tags"]).map(normalizeJob);
         const talents = searchMockList(mockData.talentList, keyword, ["name", "school", "currentRole", "targetRole", "tags"]).map(normalizeTalent);
 
@@ -1097,30 +1731,23 @@ module.exports = {
 
   // ── Step 2.5：Zone API methods ──
   async getTeaRoomInfo() {
-    return execute(
-      async () => {
-        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "getZoneDetail", zoneId: "tea-room" } });
-        return res.result;
-      },
-      async () => {
-        await delay(100);
-        const zoneData = require("./mock-zone-data");
-        const allZones = Object.values(zoneData.zonesByCategory || {}).flat();
-        return { zoneName: "晶圆茶水间", memberCount: 50000, todayPostCount: 320, totalPostCount: 18500 };
-      }
-    );
+    return module.exports.getZoneDetail("tea-room");
   },
 
   async getUserZones() {
     return execute(
       async () => {
         const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "getUserZones" } });
-        return res.result;
+        return {
+          ...(res.result || {}),
+          zones: (res.result?.zones || []).map(normalizeZone).filter(Boolean),
+        };
       },
       async () => {
         await delay(100);
-        return { zones: require("./mock-zone-data").myZones };
-      }
+        return { zones: getMockUserZoneList() };
+      },
+      { fallbackOnCloudError: true }
     );
   },
 
@@ -1128,20 +1755,108 @@ module.exports = {
     return execute(
       async () => {
         const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "getZoneList", category, page, size } });
-        return res.result;
+        return {
+          ...(res.result || {}),
+          zones: (res.result?.zones || []).map(normalizeZone).filter(Boolean),
+        };
       },
       async () => {
         await delay(100);
-        const zoneData = require("./mock-zone-data");
-        const list = (zoneData.zonesByCategory[category] || []).map(z => ({
-          zoneId: z.zoneId,
-          zoneName: z.zoneName,
-          memberCount: typeof z.memberCount === "string" ? 0 : z.memberCount,
-          todayPosts: z.todayPosts || 0,
-          isJoined: z.isJoined || false,
-        }));
+        const list = resolveMockZoneByCategory(category);
         return { zones: list, total: list.length, page, size };
-      }
+      },
+      { fallbackOnCloudError: true }
+    );
+  },
+
+  async getZoneDetail(zoneId) {
+    return execute(
+      async () => {
+        const res = await wx.cloud.callFunction({
+          name: "zoneService",
+          data: { action: "getZoneDetail", zoneId },
+        });
+        return normalizeZone(res.result);
+      },
+      async () => {
+        await delay(80);
+        return normalizeZone(getMockZoneById(zoneId));
+      },
+      { fallbackOnCloudError: true }
+    );
+  },
+
+  async getZonePosts({ zoneId, tab = "all", sort = "latest", page = 1, size = PAGE_SIZE } = {}) {
+    return execute(
+      async () => {
+        const res = await wx.cloud.callFunction({
+          name: "zoneService",
+          data: { action: "getZonePosts", zoneId, tab, sort, page, size },
+        });
+        const total = safeNumber(res.result?.total);
+        return {
+          data: (res.result?.posts || []).map(normalizePost).filter(Boolean),
+          total,
+          page,
+          size,
+          hasMore: page * size < total,
+        };
+      },
+      async () => {
+        await delay(100);
+        const result = getMockZonePostResult({ zoneId, tab, sort, page, size });
+        return {
+          data: result.posts,
+          total: result.total,
+          page,
+          size,
+          hasMore: page * size < result.total,
+        };
+      },
+      { fallbackOnCloudError: true }
+    );
+  },
+
+  async getZonePinned(zoneId) {
+    return execute(
+      async () => {
+        const res = await wx.cloud.callFunction({
+          name: "zoneService",
+          data: { action: "getZonePinned", zoneId },
+        });
+        return {
+          data: (res.result?.posts || []).map(normalizePost).filter(Boolean),
+        };
+      },
+      async () => {
+        await delay(80);
+        const result = getMockZonePostResult({ zoneId, tab: "best", sort: "latest", page: 1, size: 3 });
+        return {
+          data: result.posts,
+        };
+      },
+      { fallbackOnCloudError: true }
+    );
+  },
+
+  async getTeaRoomTopics() {
+    return execute(
+      async () => {
+        const res = await wx.cloud.callFunction({
+          name: "zoneService",
+          data: { action: "getTeaRoomTopics" },
+        });
+        return {
+          data: (res.result?.topics || []).map(normalizeTeaRoomTopic).filter((item) => item.topicId),
+        };
+      },
+      async () => {
+        await delay(80);
+        return {
+          data: TEA_ROOM_TOPIC_FALLBACKS.map(normalizeTeaRoomTopic),
+        };
+      },
+      { fallbackOnCloudError: true }
     );
   },
 
@@ -1154,7 +1869,8 @@ module.exports = {
       async () => {
         await delay(120);
         return { success: true, message: "加入成功" };
-      }
+      },
+      { fallbackOnCloudError: true }
     );
   },
 
@@ -1167,7 +1883,8 @@ module.exports = {
       async () => {
         await delay(120);
         return { success: true, message: "退出成功" };
-      }
+      },
+      { fallbackOnCloudError: true }
     );
   },
 };

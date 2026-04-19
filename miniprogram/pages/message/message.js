@@ -2,10 +2,21 @@ const api = require("../../utils/api");
 const { messageTabs } = require("../../utils/constants");
 const { getNavMetrics } = require("../../utils/util");
 // === STEP 1.6 修改开始：引入互动 mock 数据 ===
-const { interactionMessages } = require("../../utils/mock-interaction-data");
+let interactionMock = {};
+try {
+  interactionMock = require("../../utils/mock-interaction-data");
+} catch (error) {
+  console.warn("mock interaction data unavailable", error);
+}
+
+const { interactionMessages = [] } = interactionMock;
 // === STEP 1.6 修改结束 ===
 // === STEP 1.6 增强 修改开始：引入私聊/群组/通知 mock 数据 ===
-const { privateChatList, groupChatList, systemNotifications } = require("../../utils/mock-interaction-data");
+const {
+  privateChatList = [],
+  groupChatList = [],
+  systemNotifications = [],
+} = interactionMock;
 // === STEP 1.6 增强 修改结束 ===
 
 // === STEP 1.6 增强 修改开始：通知类型图标映射 ===
@@ -24,6 +35,57 @@ const BTN_W = 128; // 每个按钮 64dp = 128rpx
 const SWIPE_W_3 = BTN_W * 3; // 384rpx
 const SWIPE_W_2 = BTN_W * 2; // 256rpx
 // === STEP 1.6 增强 II 修改结束 ===
+
+function sortPinnedFirst(list = []) {
+  return [...list].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+}
+
+function mapPrivateChatItem(item = {}) {
+  const nickname = item.name || item.user?.nickname || item.user?.nickName || "会话";
+  return {
+    chatId: item.chatId || item.id || "",
+    user: {
+      nickname,
+      nickName: nickname,
+      role: item.role || item.user?.role || "",
+      avatarText: item.avatarText || nickname.slice(0, 1) || "聊",
+    },
+    lastMessage: item.lastMessage || "暂无消息",
+    lastMessageTime: item.time || item.lastMessageTime || "",
+    unreadCount: Number(item.unreadCount || item.unread || 0),
+    isPinned: Boolean(item.isPinned),
+  };
+}
+
+function mapGroupChatItem(item = {}) {
+  const groupName = item.name || item.groupName || "群聊";
+  return {
+    groupId: item.chatId || item.groupId || item.id || "",
+    groupName,
+    memberCount: Number(item.memberCount || (item.participantProfiles || []).length || 0),
+    lastSender: item.lastSender || "群成员",
+    lastMessage: item.lastMessage || "暂无消息",
+    lastMessageTime: item.time || item.lastMessageTime || "",
+    unreadCount: Number(item.unreadCount || item.unread || 0),
+    isPinned: Boolean(item.isPinned),
+  };
+}
+
+function mapNotificationItem(item = {}) {
+  const type = item.type || "system";
+  const config = notifTypeConfig[type] || notifTypeConfig.system;
+  const unreadCount = Number(item.unreadCount || item.unread || 0);
+  return {
+    id: item.id || item.chatId || "",
+    type,
+    title: item.title || item.name || "系统通知",
+    content: item.content || item.lastMessage || "暂无通知内容",
+    time: item.time || "",
+    isRead: item.isRead !== undefined ? !!item.isRead : unreadCount === 0,
+    typeEmoji: config.emoji,
+    typeBg: config.bg,
+  };
+}
 
 Page({
   data: {
@@ -50,45 +112,64 @@ Page({
     this.setData({
       ...getNavMetrics()
     });
-    // === STEP 1.6 增强 修改开始：用 mock 数据初始化列表 ===
     this._initMockLists();
-    this._updateTabBarBadge();
-    // === STEP 1.6 增强 修改结束 ===
+    this._loadRealFirstLists();
   },
 
   onShow() {
-    // === STEP 1.1 修改开始：同步自定义 TabBar 选中状态 ===
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+    if (typeof this.getTabBar === "function" && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 });
     }
-    // === STEP 1.1 修改结束 ===
-    // === STEP 1.6 增强 修改开始：刷新角标 ===
     this._updateTabBarBadge();
-    // === STEP 1.6 增强 修改结束 ===
+    this._loadRealFirstLists();
   },
 
   // === STEP 1.6 增强 修改开始：mock 数据初始化 + 置顶排序 ===
   _initMockLists() {
-    const sortedPrivate = [...privateChatList].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-    const sortedGroup = [...groupChatList].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-    const notifList = systemNotifications.map(n => ({
-      ...n,
-      typeEmoji: notifTypeConfig[n.type] ? notifTypeConfig[n.type].emoji : "⚙️",
-      typeBg: notifTypeConfig[n.type] ? notifTypeConfig[n.type].bg : "#3A3A3A",
-    }));
-    // === STEP 1.6 增强 II 修改开始：互动列表追加 isRead/isPinned 字段 ===
-    const interactionList = interactionMessages.map(item => ({
+    const interactionList = interactionMessages.map((item) => ({
       ...item,
       isRead: false,
       isPinned: false,
     }));
-    // === STEP 1.6 增强 II 修改结束 ===
     this.setData({
-      privateList: sortedPrivate,
-      groupList: sortedGroup,
-      notificationList: notifList,
-      interactionList: interactionList,
+      privateList: sortPinnedFirst(privateChatList),
+      groupList: sortPinnedFirst(groupChatList),
+      notificationList: systemNotifications.map(mapNotificationItem),
+      interactionList,
     });
+  },
+
+  async _loadRealFirstLists() {
+    try {
+      const [privateRes, groupRes, systemRes] = await Promise.all([
+        api.getChatList("private"),
+        api.getChatList("group"),
+        api.getChatList("system"),
+      ]);
+      const nextData = {};
+      const realPrivate = (privateRes.data || []).map(mapPrivateChatItem).filter((item) => item.chatId);
+      const realGroup = (groupRes.data || []).map(mapGroupChatItem).filter((item) => item.groupId);
+      const realSystem = (systemRes.data || []).map(mapNotificationItem).filter((item) => item.id);
+
+      if (realPrivate.length) {
+        nextData.privateList = sortPinnedFirst(realPrivate);
+      }
+      if (realGroup.length) {
+        nextData.groupList = sortPinnedFirst(realGroup);
+      }
+      if (realSystem.length) {
+        nextData.notificationList = realSystem;
+      }
+
+      if (Object.keys(nextData).length) {
+        this.setData(nextData, () => this._updateTabBarBadge());
+        return;
+      }
+      this._updateTabBarBadge();
+    } catch (error) {
+      console.warn("load real chat list failed", error);
+      this._updateTabBarBadge();
+    }
   },
 
   _updateTabBarBadge() {
@@ -248,14 +329,28 @@ Page({
   // === STEP 1.6 增强 修改开始：私聊点击 ===
   onPrivateTap(event) {
     const chatId = event.currentTarget.dataset.chatid;
-    console.log("打开私聊", chatId);
+    const title = event.currentTarget.dataset.name || "会话";
+    if (!chatId) {
+      wx.showToast({ title: "会话信息异常", icon: "none" });
+      return;
+    }
+    wx.navigateTo({
+      url: `/pages/chat-detail/chat-detail?chatId=${chatId}&title=${encodeURIComponent(title)}`,
+    });
   },
   // === STEP 1.6 增强 修改结束 ===
 
   // === STEP 1.6 增强 修改开始：群组点击 ===
   onGroupTap(event) {
     const groupId = event.currentTarget.dataset.groupid;
-    console.log("打开群组", groupId);
+    const title = event.currentTarget.dataset.name || "群聊";
+    if (!groupId) {
+      wx.showToast({ title: "群聊信息异常", icon: "none" });
+      return;
+    }
+    wx.navigateTo({
+      url: `/pages/chat-detail/chat-detail?chatId=${groupId}&title=${encodeURIComponent(title)}`,
+    });
   },
   // === STEP 1.6 增强 修改结束 ===
 

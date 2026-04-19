@@ -1,6 +1,5 @@
 const api = require("../../utils/api");
-const { deepClone, getNavMetrics } = require("../../utils/util");
-const { myZones } = require("../../utils/mock-zone-data");
+const { getNavMetrics } = require("../../utils/util");
 
 const CONTENT_TYPE_MAP = {
   discuss: { key: "discuss", label: "讨论" },
@@ -26,150 +25,207 @@ const ZONE_TABS_MAP = {
   special: ["chat"],
 };
 
-const MY_ZONE_LIST = [
-  { zoneId: "tea-room", zoneName: "☕ 晶圆茶水间", category: "special" },
-  ...myZones.map(z => ({ zoneId: z.zoneId, zoneName: z.zoneName, category: "unknown" })),
-];
+function createTeaRoomZone() {
+  return {
+    zoneId: "tea-room",
+    zoneName: "晶圆茶水间",
+    category: "special",
+    tabs: [{ tabKey: "chat", tabName: "闲聊" }],
+  };
+}
+
+function normalizeSelectableZone(zone) {
+  if (!zone || !zone.zoneId) {
+    return null;
+  }
+
+  return {
+    zoneId: zone.zoneId,
+    zoneName: zone.zoneName || "",
+    category: zone.category || (zone.zoneId === "tea-room" ? "special" : "company"),
+    tabs: Array.isArray(zone.tabs) ? zone.tabs : [],
+    zoneDesc: zone.zoneDesc || "",
+    memberCount: Number(zone.memberCount || 0),
+  };
+}
+
+function resolvePresetContentType(contentType) {
+  if (contentType === "article") {
+    return "discuss";
+  }
+  if (contentType === "qa") {
+    return "qa";
+  }
+  return contentType || "";
+}
 
 Page({
   data: {
     statusBarHeight: 24,
     capsuleHeight: 32,
     navCapsuleInsetRight: 16,
-    // Zone selection
     selectedZone: null,
     selectedZoneName: "",
     showZonePlaceholder: true,
     showZonePicker: false,
-    myZones: MY_ZONE_LIST,
+    zoneLoading: false,
+    myZones: [],
     recentZones: [],
     searchKeyword: "",
-    // Content type
     contentTypes: [],
     selectedContentType: "",
     isTeaRoom: false,
-    // Title & content
     title: "",
     content: "",
     titlePlaceholder: "请输入标题",
     titleRequired: true,
-    // Topics
     topics: [],
     topicInput: "",
     showTopicInput: false,
     maxTopics: 5,
-    // Anonymous
     anonymous: false,
-    // Images (preserved from original)
     images: [],
-    // Publish state
     canPublish: false,
     publishing: false,
     hasContent: false,
+    editorMinHeight: "400rpx",
   },
 
-  onLoad(options) {
+  async onLoad(options = {}) {
     const metrics = getNavMetrics();
-    const zoneId = options.zoneId || "";
-    const isAnonymous = options.isAnonymous === "true";
-    const contentType = options.contentType || "";
+    const presetContentType = resolvePresetContentType(options.contentType);
     const showZonePicker = options.showZonePicker === "true";
-
-    let selectedZone = null;
-    let selectedZoneName = "";
-    let showZonePlaceholder = true;
-    let isTeaRoom = false;
-    let contentTypes = [];
-    let selectedContentType = "";
-    let anonymous = false;
-    let titlePlaceholder = "请输入标题";
-    let titleRequired = true;
-    let editorMinHeight = "400rpx";
-
-    if (zoneId) {
-      const found = MY_ZONE_LIST.find(z => z.zoneId === zoneId);
-      if (found) {
-        selectedZone = found;
-        selectedZoneName = found.zoneName;
-        showZonePlaceholder = false;
-        isTeaRoom = zoneId === "tea-room";
-        contentTypes = this._buildContentTypes(found.category || "company", isTeaRoom);
-        selectedContentType = contentTypes.length > 0 ? contentTypes[0].key : "";
-      }
-    }
-
-    if (isTeaRoom) {
-      anonymous = true;
-      titlePlaceholder = "标题（选填，想到什么就写什么）";
-      titleRequired = false;
-    }
-
-    // Handle contentType parameter (Step 2.4 增强)
-    if (contentType === "article") {
-      titlePlaceholder = "请输入文章标题";
-      titleRequired = true;
-      editorMinHeight = "800rpx";
-      if (contentTypes.length === 0) {
-        contentTypes = this._buildContentTypes("company", false);
-      }
-      selectedContentType = "discuss";
-    } else if (contentType === "qa") {
-      titlePlaceholder = "请输入你的问题";
-      titleRequired = true;
-      if (contentTypes.length === 0) {
-        contentTypes = this._buildContentTypes("company", false);
-      }
-      selectedContentType = "qa";
-    }
-
-    if (isTeaRoom) {
-      anonymous = true;
-    }
-
-    // Load recent zones from local storage
-    let recentZones = [];
-    try {
-      const stored = wx.getStorageSync("recent_post_zones") || [];
-      recentZones = stored.slice(0, 3);
-    } catch (e) {}
 
     this.setData({
       ...metrics,
-      selectedZone,
-      selectedZoneName,
-      showZonePlaceholder,
-      isTeaRoom,
-      contentTypes,
-      selectedContentType,
-      anonymous,
-      titlePlaceholder,
-      titleRequired,
-      editorMinHeight,
-      recentZones,
       showZonePicker,
+      titlePlaceholder: presetContentType === "qa" ? "请输入你的问题" : "请输入标题",
+      editorMinHeight: options.contentType === "article" ? "800rpx" : "400rpx",
     });
+
+    await this.loadSelectableZones(options);
   },
 
-  _buildContentTypes(category, isTeaRoom) {
+  async loadSelectableZones(options = {}) {
+    const requestedZoneId = options.zoneId || "";
+    const forceAnonymous = options.isAnonymous === "true";
+    const presetContentType = resolvePresetContentType(options.contentType);
+
+    this.setData({ zoneLoading: true });
+    try {
+      const result = await api.getUserZones();
+      const joinedZones = (result.zones || [])
+        .map(normalizeSelectableZone)
+        .filter(Boolean)
+        .filter((item, index, list) => list.findIndex((zone) => zone.zoneId === item.zoneId) === index);
+
+      const teaRoomZone = createTeaRoomZone();
+      const zoneList = [
+        teaRoomZone,
+        ...joinedZones.filter((item) => item.zoneId !== teaRoomZone.zoneId),
+      ];
+
+      let selectedZone = zoneList.find((item) => item.zoneId === requestedZoneId) || null;
+      if (requestedZoneId && !selectedZone) {
+        const detail = await api.getZoneDetail(requestedZoneId);
+        selectedZone = normalizeSelectableZone(detail);
+        if (selectedZone) {
+          zoneList.unshift(selectedZone);
+        }
+      }
+
+      const recentZones = this._resolveRecentZones(zoneList);
+      this.setData({
+        myZones: zoneList,
+        recentZones,
+        zoneLoading: false,
+      });
+
+      if (selectedZone) {
+        this._applyZone(selectedZone, { forceAnonymous, presetContentType });
+      } else if (presetContentType) {
+        this.setData({ selectedContentType: presetContentType });
+      }
+    } catch (error) {
+      console.error("loadSelectableZones failed", error);
+      this.setData({ zoneLoading: false });
+      wx.showToast({ title: "专区加载失败", icon: "none" });
+    }
+  },
+
+  _resolveRecentZones(zoneList) {
+    const zoneMap = zoneList.reduce((acc, item) => {
+      acc[item.zoneId] = item;
+      return acc;
+    }, {});
+
+    try {
+      const stored = wx.getStorageSync("recent_post_zones") || [];
+      return stored.map((zoneId) => zoneMap[zoneId]).filter(Boolean).slice(0, 3);
+    } catch (error) {
+      return [];
+    }
+  },
+
+  _buildContentTypes(zone) {
+    const isTeaRoom = zone.zoneId === "tea-room" || zone.category === "special";
     if (isTeaRoom) {
       return [{ key: "chat", label: "闲聊" }];
     }
-    const tabKeys = ZONE_TABS_MAP[category] || ZONE_TABS_MAP.company;
-    return tabKeys
-      .map(key => CONTENT_TYPE_MAP[key])
-      .filter(Boolean);
+
+    const tabKeys = (zone.tabs || [])
+      .map((item) => item.tabKey || item.key)
+      .filter((key) => key && key !== "all" && key !== "best" && key !== "hot");
+    const keys = tabKeys.length ? tabKeys : (ZONE_TABS_MAP[zone.category] || ZONE_TABS_MAP.company);
+
+    return keys
+      .map((key) => CONTENT_TYPE_MAP[key])
+      .filter(Boolean)
+      .filter((item, index, list) => list.findIndex((current) => current.key === item.key) === index);
+  },
+
+  _resolveSelectedContentType(contentTypes, presetContentType) {
+    if (!contentTypes.length) {
+      return "";
+    }
+    if (presetContentType && contentTypes.find((item) => item.key === presetContentType)) {
+      return presetContentType;
+    }
+    return contentTypes[0].key;
+  },
+
+  _applyZone(zone, options = {}) {
+    const isTeaRoom = zone.zoneId === "tea-room" || zone.category === "special";
+    const contentTypes = this._buildContentTypes(zone);
+    const selectedContentType = this._resolveSelectedContentType(contentTypes, options.presetContentType);
+    const anonymous = isTeaRoom ? true : (options.forceAnonymous ? true : this.data.anonymous);
+
+    this.setData({
+      selectedZone: zone,
+      selectedZoneName: zone.zoneName,
+      showZonePlaceholder: false,
+      showZonePicker: false,
+      isTeaRoom,
+      contentTypes,
+      selectedContentType,
+      titlePlaceholder: isTeaRoom ? "标题选填，想到什么就写什么" : this.data.titlePlaceholder,
+      titleRequired: !isTeaRoom,
+      anonymous,
+    });
+    this._checkCanPublish();
   },
 
   _checkCanPublish() {
-    const { selectedZone, content, title, titleRequired, selectedContentType } = this.data;
+    const { selectedZone, content, title, titleRequired } = this.data;
     const hasZone = !!selectedZone;
     const hasContent = content.trim().length > 0;
     const hasTitle = !titleRequired || title.trim().length > 0;
-    const canPublish = hasZone && hasContent && hasTitle;
-    this.setData({ canPublish, hasContent });
+    this.setData({
+      canPublish: hasZone && hasContent && hasTitle,
+      hasContent,
+    });
   },
 
-  // ── Zone picker ──
   openZonePicker() {
     this.setData({ showZonePicker: true, searchKeyword: "" });
   },
@@ -184,29 +240,11 @@ Page({
 
   selectZone(event) {
     const zoneId = event.currentTarget.dataset.zoneid;
-    const zone = MY_ZONE_LIST.find(z => z.zoneId === zoneId);
-    if (!zone) return;
+    const zone = this.data.myZones.find((item) => item.zoneId === zoneId);
+    if (!zone) {
+      return;
+    }
     this._applyZone(zone);
-  },
-
-  _applyZone(zone) {
-    const isTeaRoom = zone.zoneId === "tea-room";
-    const contentTypes = this._buildContentTypes(zone.category || "company", isTeaRoom);
-    const selectedContentType = contentTypes.length > 0 ? contentTypes[0].key : "";
-
-    this.setData({
-      selectedZone: zone,
-      selectedZoneName: zone.zoneName,
-      showZonePlaceholder: false,
-      showZonePicker: false,
-      isTeaRoom,
-      contentTypes,
-      selectedContentType,
-      titlePlaceholder: isTeaRoom ? "标题（选填，想到什么就写什么）" : "请输入标题",
-      titleRequired: !isTeaRoom,
-      anonymous: isTeaRoom ? true : this.data.anonymous,
-    });
-    this._checkCanPublish();
   },
 
   goToCommunityFromPicker() {
@@ -214,14 +252,14 @@ Page({
     wx.switchTab({ url: "/pages/community/community" });
   },
 
-  // ── Content type selection ──
   onContentTypeTap(event) {
     const key = event.currentTarget.dataset.key;
-    if (key === this.data.selectedContentType) return;
+    if (key === this.data.selectedContentType) {
+      return;
+    }
     this.setData({ selectedContentType: key });
   },
 
-  // ── Title & content input ──
   onTitleInput(event) {
     this.setData({ title: event.detail.value });
     this._checkCanPublish();
@@ -232,7 +270,6 @@ Page({
     this._checkCanPublish();
   },
 
-  // ── Topic tags ──
   toggleTopicInput() {
     this.setData({ showTopicInput: !this.data.showTopicInput, topicInput: "" });
   },
@@ -244,12 +281,14 @@ Page({
   addTopic() {
     const { topicInput, topics, maxTopics } = this.data;
     const text = topicInput.trim().replace(/^#/, "");
-    if (!text) return;
-    if (topics.length >= maxTopics) {
-      wx.showToast({ title: `最多${maxTopics}个话题`, icon: "none" });
+    if (!text) {
       return;
     }
-    if (topics.find(t => t === text)) {
+    if (topics.length >= maxTopics) {
+      wx.showToast({ title: `最多 ${maxTopics} 个话题`, icon: "none" });
+      return;
+    }
+    if (topics.find((item) => item === text)) {
       wx.showToast({ title: "话题已添加", icon: "none" });
       return;
     }
@@ -267,49 +306,50 @@ Page({
     this.setData({ topics });
   },
 
-  // ── Anonymous toggle ──
   handleAnonymousChange(event) {
+    if (this.data.isTeaRoom) {
+      this.setData({ anonymous: true });
+      return;
+    }
     this.setData({ anonymous: event.detail.value });
   },
 
-  // ── Images (preserved from original) ──
   handleAddImage() {
     wx.showToast({ title: "图片上传待接入", icon: "none" });
   },
 
-  // ── Attachment ──
   handleAddAttachment() {
-    console.log("添加附件");
+    wx.showToast({ title: "附件能力待接入", icon: "none" });
   },
 
-  // ── Navigation ──
   goBack() {
     const { title, content, topics } = this.data;
     const hasUnsaved = title.trim() || content.trim() || topics.length > 0;
-    if (hasUnsaved) {
-      wx.showModal({
-        title: "提示",
-        content: "有未保存的内容，确定退出吗？",
-        confirmColor: "#FF4D4F",
-        success: (res) => {
-          if (res.confirm) {
-            this._doGoBack();
-          }
-        },
-      });
+    if (!hasUnsaved) {
+      this._doGoBack();
       return;
     }
-    this._doGoBack();
+
+    wx.showModal({
+      title: "提示",
+      content: "有未保存的内容，确定退出吗？",
+      confirmColor: "#FF4D4F",
+      success: (res) => {
+        if (res.confirm) {
+          this._doGoBack();
+        }
+      },
+    });
   },
 
   _doGoBack() {
     wx.navigateBack({ fail: () => wx.switchTab({ url: "/pages/community/community" }) });
   },
 
-  // ── Publish ──
   async handlePublish() {
-    if (this.data.publishing) return;
-    if (!this.data.canPublish) return;
+    if (this.data.publishing || !this.data.canPublish) {
+      return;
+    }
 
     const { selectedZone, selectedContentType, title, content, topics, anonymous } = this.data;
 
@@ -324,16 +364,26 @@ Page({
         isAnonymous: anonymous,
       });
 
-      // Save recent zone
       this._saveRecentZone(selectedZone.zoneId);
-
       getApp().globalData.communityNeedsRefresh = true;
       wx.showToast({ title: "发布成功", icon: "success" });
       setTimeout(() => {
         this._doGoBack();
       }, 300);
-    } catch (e) {
-      wx.showToast({ title: "发布失败，请重试", icon: "none" });
+    } catch (error) {
+      console.error("createPost failed", error);
+      const message = String(error?.message || "");
+      let toast = "发布失败，请重试";
+      if (message.includes("zone not found")) {
+        toast = "专区未初始化，请先执行 seed";
+      } else if (message.includes("content is required")) {
+        toast = "请先填写正文内容";
+      } else if (message.includes("title is required")) {
+        toast = "请先填写标题";
+      } else if (message) {
+        toast = message;
+      }
+      wx.showToast({ title: toast, icon: "none" });
     } finally {
       this.setData({ publishing: false });
     }
@@ -342,10 +392,12 @@ Page({
   _saveRecentZone(zoneId) {
     try {
       let stored = wx.getStorageSync("recent_post_zones") || [];
-      stored = stored.filter(id => id !== zoneId);
+      stored = stored.filter((item) => item !== zoneId);
       stored.unshift(zoneId);
-      stored = stored.slice(0, 3);
-      wx.setStorageSync("recent_post_zones", stored);
-    } catch (e) {}
+      wx.setStorageSync("recent_post_zones", stored.slice(0, 3));
+      this.setData({
+        recentZones: this._resolveRecentZones(this.data.myZones),
+      });
+    } catch (error) {}
   },
 });

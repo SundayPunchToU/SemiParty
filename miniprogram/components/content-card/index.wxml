@@ -21,7 +21,7 @@
   <view class="card-body">
     <view class="card-title">{{item.title}}</view>
     <view class="card-summary">{{item.content}}</view>
-    <view wx:if="{{showTopicTag && item.tags && item.tags.length > 0}}" class="card-topic-tag">#{{item.tags[0].text}}</view>
+    <view wx:if="{{showTopicTag && topicTagText}}" class="card-topic-tag">#{{topicTagText}}</view>
   </view>
 
   <!-- D区：互动数据行 -->
