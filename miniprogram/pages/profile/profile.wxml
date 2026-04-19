@@ -1,13 +1,11 @@
 <view class="page-profile">
-  <!-- 顶部导航 -->
   <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
     <view class="nav-inner" style="min-height: {{capsuleHeight}}px;">
-      <view class="brand">芯圈 SemiParty</view>
+      <view class="brand">SemiParty</view>
       <view class="nav-right" bindtap="goSettings">⚙️</view>
     </view>
   </view>
 
-  <!-- ① 个人信息卡片 -->
   <view class="profile-card">
     <view class="card-bg"></view>
     <view class="card-content">
@@ -17,7 +15,6 @@
       <view class="profile-name">{{profile.nickname}}</view>
       <view class="profile-role">{{profile.role}} · {{profile.company}} · {{profile.experience}}</view>
       <view class="profile-bio">{{profile.bio || '完善资料后，让同行更快认识你'}}</view>
-      <!-- 徽章 -->
       <view class="badge-row">
         <view wx:for="{{profile.badges}}" wx:key="id" class="badge-chip">
           <text>{{item.icon}}</text>
@@ -28,7 +25,6 @@
     </view>
   </view>
 
-  <!-- ② 数据统计 -->
   <view class="stat-row">
     <view class="stat-item" data-tab="posts" bindtap="onStatTap">
       <view class="stat-num">{{formatCount(profile.stats.postCount)}}</view>
@@ -52,26 +48,6 @@
     </view>
   </view>
 
-  <!-- ③ 我加入的专区 -->
-  <view class="section-block">
-    <view class="section-header">
-      <view class="section-title">我的专区</view>
-      <view class="section-link" bindtap="goCommunity">全部 ></view>
-    </view>
-    <scroll-view class="zone-scroll" scroll-x="true" show-scrollbar="{{false}}">
-      <view class="zone-chips">
-        <view
-          wx:for="{{profile.joinedZones}}"
-          wx:key="zoneId"
-          class="zone-chip"
-          data-id="{{item.zoneId}}"
-          bindtap="onZoneTap"
-        >{{item.name}}</view>
-      </view>
-    </scroll-view>
-  </view>
-
-  <!-- ④ 内容 Tab -->
   <view class="content-section">
     <view class="content-tabs">
       <view
@@ -83,7 +59,6 @@
       >{{item.label}}</view>
     </view>
 
-    <!-- 我的帖子 -->
     <view wx:if="{{activeTab === 'posts'}}" class="tab-content">
       <block wx:for="{{myPosts}}" wx:key="postId">
         <view class="post-card" data-id="{{item.postId}}" bindtap="onPostTap">
@@ -94,27 +69,25 @@
             <text class="post-card-time">{{item.createdAtText || item.createdAt}}</text>
           </view>
           <view class="post-card-meta">
-            <text>{{item.zoneName}} · {{item.contentTypeLabel}}</text>
-            <text wx:if="{{item.isBest}}" class="best-badge">🏆 精华</text>
+            <text>{{item.topicName || item.zoneName}} · {{item.contentTypeLabel}}</text>
+            <text wx:if="{{item.isBest}}" class="best-badge">🏅 精华</text>
           </view>
           <view class="post-card-stats">
             <text>👍 {{item.likeCount}}</text>
             <text>💬 {{item.commentCount}}</text>
-            <text>👁 {{item.viewCount}}</text>
+            <text>👀 {{item.viewCount}}</text>
           </view>
         </view>
       </block>
       <view wx:if="{{!myPosts.length}}" class="empty-state">你还没有发布过帖子，去社区发一条吧</view>
     </view>
 
-
-    <!-- 我的收藏 -->
     <view wx:if="{{activeTab === 'favorites'}}" class="tab-content">
       <block wx:for="{{myFavorites}}" wx:key="postId">
         <view class="fav-card" data-id="{{item.postId}}" bindtap="onPostTap">
           <view class="fav-title">{{item.title}}</view>
           <view class="fav-meta">
-            <text>{{item.author.nickname}} · {{item.zoneName}}</text>
+            <text>{{item.author.nickname}} · {{item.topicName || item.zoneName}}</text>
           </view>
           <view class="fav-stats">
             <text>👍 {{item.likeCount}}</text>
@@ -126,14 +99,13 @@
       <view wx:if="{{!myFavorites.length}}" class="empty-state">暂无收藏内容</view>
     </view>
 
-    <!-- 浏览历史 -->
     <view wx:if="{{activeTab === 'history'}}" class="tab-content">
       <view class="history-clear" bindtap="clearHistory">清空历史</view>
       <block wx:for="{{myHistory}}" wx:key="postId">
         <view class="history-card" data-id="{{item.postId}}" bindtap="onPostTap">
           <view class="history-title">{{item.title}}</view>
           <view class="history-meta">
-            <text>{{item.zoneName}}</text>
+            <text>{{item.topicName || item.zoneName}}</text>
             <text class="history-time">{{item.viewedAt}}</text>
           </view>
         </view>
@@ -142,7 +114,6 @@
     </view>
   </view>
 
-  <!-- ⑤ 功能入口 -->
   <view class="menu-section">
     <view class="menu-card">
       <view class="menu-row" bindtap="goFollowList" data-type="following">

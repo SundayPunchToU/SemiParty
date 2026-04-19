@@ -122,6 +122,31 @@ function safeNumber(value, fallback = 0) {
   return Number.isFinite(num) ? num : fallback;
 }
 
+function inferTopicIdFromName(name = "") {
+  const normalized = String(name).replace(/^#/, "").trim().toLowerCase();
+  const map = {
+    "热门": "hot",
+    "技术求助": "tech-help",
+    "cmp": "cmp",
+    "finfet": "finfet",
+    "光刻": "litho",
+    "夜班日常": "night-shift",
+    "食堂测评": "canteen",
+    "通勤吐槽": "commute",
+    "行业八卦": "gossip",
+    "跳槽故事": "job-hop",
+    "薪资爆料": "salary",
+    "面经分享": "interview",
+    "秋招进展": "fall-recruit",
+    "中芯国际": "smic",
+    "长鑫存储": "cxmt",
+    "工艺讨论": "tech-help",
+    "求职交流": "job-hop",
+    "设备选型": "tech-help",
+  };
+  return map[normalized] || "";
+}
+
 function getPrimaryTag(tags = []) {
   if (!Array.isArray(tags) || !tags.length) {
     return null;
@@ -220,8 +245,15 @@ function normalizePost(record) {
   }
 
   const content = String(record.content || "").trim();
-  const tags = normalizeTags(record.tags, record.topic);
-  const topic = record.topic || getPrimaryTag(tags);
+  const rawTopicName =
+    record.topicName ||
+    (record.topic && record.topic.text) ||
+    (record.topic && record.topic.topicName) ||
+    "";
+  const tags = normalizeTags(record.tags, rawTopicName ? { text: rawTopicName } : record.topic);
+  const topic = rawTopicName
+    ? { text: rawTopicName, type: (record.topic && record.topic.type) || "blue" }
+    : record.topic || getPrimaryTag(tags);
   const isAnonymous = Boolean(
     record.isAnonymous !== undefined ? record.isAnonymous : record.anonymous
   );
@@ -232,6 +264,8 @@ function normalizePost(record) {
   const viewCount = safeNumber(record.viewCount, safeNumber(record.views, 0));
   const zoneId = record.zoneId || "";
   const zoneName = record.zoneName || "";
+  const topicId = record.topicId || inferTopicIdFromName(rawTopicName);
+  const topicName = rawTopicName || zoneName;
   const contentType = record.contentType || "discuss";
   const id = record._id || record.id;
 
@@ -243,6 +277,8 @@ function normalizePost(record) {
     userId: record.userId || author.userId || author.uid || "",
     zoneId,
     zoneName,
+    topicId,
+    topicName,
     contentType,
     category: record.category || "hot",
     title,
@@ -387,6 +423,7 @@ function normalizeTeaRoomTopic(topic = {}) {
     topicId,
     topicName,
     name: topicName,
+    sortOrder: safeNumber(topic.sortOrder),
     postCount: safeNumber(topic.postCount),
   };
 }
@@ -508,6 +545,31 @@ function getMockZonePostResult({ zoneId, tab = "all", sort = "latest", page = 1,
     total: sorted.length,
     page,
     size,
+  };
+}
+
+function getMockPostsByTopic({ topicId = "hot", sort = "latest", page = 1, size = 20 } = {}) {
+  const posts = deepClone(mockData.postList)
+    .map(normalizePost)
+    .filter(Boolean)
+    .filter((item) => topicId === "hot" || item.topicId === topicId);
+  const sorted = sortPosts(posts, sort);
+  const start = (page - 1) * size;
+  return {
+    data: sorted.slice(start, start + size),
+    total: sorted.length,
+    hasMore: start + size < sorted.length,
+  };
+}
+
+function getMockCompanyList(page = 1, size = 20) {
+  const sorted = COMPANY_LIST_FALLBACKS
+    .slice()
+    .sort((left, right) => safeNumber(right.sortOrder) - safeNumber(left.sortOrder));
+  const start = (page - 1) * size;
+  return {
+    data: deepClone(sorted.slice(start, start + size)),
+    hasMore: start + size < sorted.length,
   };
 }
 
@@ -1731,7 +1793,73 @@ module.exports = {
 
   // ── Step 2.5：Zone API methods ──
   async getTeaRoomInfo() {
-    return module.exports.getZoneDetail("tea-room");
+    return execute(
+      async () => {
+        const db = getDb();
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const _ = db.command;
+        const postRes = await db.collection("posts").where({ createdAt: _.gte(todayStart) }).count();
+        const todayPostCount = postRes.total || 0;
+        const onlineCount = Math.floor(1200 + Math.random() * 400);
+        return { todayPostCount, onlineCount };
+      },
+      async () => ({ todayPostCount: 320, onlineCount: 1500 }),
+      { fallbackOnCloudError: true }
+    );
+  },
+
+  async getPostsByTopic({ topicId = "hot", sort = "latest", page = 1, size = 20 } = {}) {
+    return execute(
+      async () => {
+        const db = getDb();
+        const query = topicId === "hot" ? {} : { topicId };
+        const orderField = sort === "hot" ? "likes" : "createdAt";
+        const countRes = await db.collection("posts").where(query).count();
+        const postsRes = await db.collection("posts")
+          .where(query)
+          .orderBy(orderField, "desc")
+          .skip((page - 1) * size)
+          .limit(size)
+          .get();
+        return {
+          data: postsRes.data.map(normalizePost).filter(Boolean),
+          total: countRes.total,
+          hasMore: page * size < countRes.total,
+        };
+      },
+      async () => getMockPostsByTopic({ topicId, sort, page, size }),
+      { fallbackOnCloudError: true }
+    );
+  },
+
+  async getCompanyList({ page = 1, size = 20 } = {}) {
+    return execute(
+      async () => {
+        const countRes = await getDb().collection("companies").count();
+        const res = await getDb()
+          .collection("companies")
+          .orderBy("sortOrder", "desc")
+          .skip((page - 1) * size)
+          .limit(size)
+          .get();
+        return {
+          data: (res.data || []).map((item) => ({
+            id: item._id || item.id,
+            name: item.name,
+            logoText: item.logoText,
+            description: item.description,
+            industry: item.industry,
+            city: item.city,
+            jobCount: item.jobCount || 0,
+            tags: item.tags || [],
+          })),
+          hasMore: page * size < countRes.total,
+        };
+      },
+      async () => getMockCompanyList(page, size),
+      { fallbackOnCloudError: true }
+    );
   },
 
   async getUserZones() {

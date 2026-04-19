@@ -12,12 +12,11 @@ function mapTypeLabel(contentType) {
   return CONTENT_TYPE_MAP[contentType] || contentType || "动态";
 }
 
-function mapProfile(profile = {}, zones = [], posts = [], favorites = []) {
+function mapProfile(profile = {}, posts = [], favorites = []) {
   return {
     ...myProfile,
     ...profile,
     nickname: profile.nickname || profile.nickName || myProfile.nickname,
-    joinedZones: zones.length ? zones : profile.joinedZones || myProfile.joinedZones || [],
     stats: {
       ...myProfile.stats,
       ...(profile.stats || {}),
@@ -46,7 +45,7 @@ function mapFavoriteItem(item = {}) {
     ...item,
     postId: item.targetId || item.postId || "",
     title: summary.title || item.title || "未命名内容",
-    zoneName: summary.zoneName || item.zoneName || "芯社区",
+    topicName: summary.topicName || item.topicName || summary.zoneName || item.zoneName || "SemiParty",
     likeCount: Number(summary.likeCount || item.likeCount || 0),
     commentCount: Number(summary.commentCount || item.commentCount || 0),
     savedAt: formatRelative(item.createdAt) || item.savedAt || "刚刚",
@@ -56,7 +55,7 @@ function mapFavoriteItem(item = {}) {
         summary.nickname ||
         item.author?.nickname ||
         item.author?.nickName ||
-        "芯社区用户",
+        "SemiParty 用户",
     },
   };
 }
@@ -66,6 +65,7 @@ function mapHistoryItem(item = {}) {
     ...item,
     postId: item.postId || item.targetId || item.id || "",
     viewedAt: formatRelative(item.createdAt) || item.viewedAt || "刚刚",
+    topicName: item.topicName || item.zoneName || "SemiParty",
   };
 }
 
@@ -98,23 +98,18 @@ Page({
   async loadProfileAssets() {
     this.setData({ loading: true });
     try {
-      const [profile, zonesRes, postsRes, favoritesRes] = await Promise.all([
+      const [profile, postsRes, favoritesRes] = await Promise.all([
         api.getUserProfile(),
-        api.getUserZones(),
         api.getMyPosts(),
         api.getFavorites({ type: "post" }),
       ]);
 
       const posts = (postsRes?.data || []).map(mapPostItem);
       const favorites = (favoritesRes?.data || []).map(mapFavoriteItem);
-      const joinedZones = (zonesRes?.zones || []).map((item) => ({
-        zoneId: item.zoneId,
-        name: item.zoneName || item.name || "专区",
-      }));
       const history = (myViewHistory || []).map(mapHistoryItem);
 
       this.setData({
-        profile: mapProfile(profile || {}, joinedZones, posts, favorites),
+        profile: mapProfile(profile || {}, posts, favorites),
         myPosts: posts,
         myFavorites: favorites,
         myHistory: history,
@@ -134,7 +129,7 @@ Page({
       profile: myProfile,
       myPosts: fallbackPosts.map(mapPostItem),
       myFavorites: [...myFavorites],
-      myHistory: [...myViewHistory],
+      myHistory: [...myViewHistory].map(mapHistoryItem),
     });
   },
 
@@ -171,17 +166,7 @@ Page({
     wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${id}` });
   },
 
-  onZoneTap(e) {
-    const zoneId = e.currentTarget.dataset.id;
-    if (!zoneId) {
-      wx.showToast({ title: "专区信息异常", icon: "none" });
-      return;
-    }
-    wx.navigateTo({ url: `/pages/zone-detail/zone-detail?zoneId=${zoneId}` });
-  },
-
   goEditProfile() {
-    console.log("编辑资料");
     wx.navigateTo({ url: "/pages/edit-profile/edit-profile" });
   },
 
@@ -205,7 +190,6 @@ Page({
 
   handleMenuTap(e) {
     const name = e.currentTarget.dataset.name;
-    console.log("跳转到", name);
     wx.showToast({ title: `${name} 待接入`, icon: "none" });
   },
 
@@ -216,11 +200,9 @@ Page({
       confirmColor: "#FF4D4F",
       success: (res) => {
         if (res.confirm) {
-          console.log("退出登录");
-          // TODO: POST /api/user/logout
           wx.showToast({ title: "已退出登录", icon: "none" });
         }
-      }
+      },
     });
   },
 });

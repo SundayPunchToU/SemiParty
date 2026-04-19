@@ -1,167 +1,41 @@
-<view class="inner-shell">
-  <!-- ① 顶部栏 -->
-  <view class="top-bar" style="padding-top: {{statusBarHeight}}px;">
-    <view class="top-bar-inner" style="height: {{capsuleHeight}}px;">
-      <view class="nav-close" bindtap="goBack">✕</view>
-      <view class="top-title">发帖</view>
-      <view
-        class="publish-btn {{canPublish ? '' : 'is-disabled'}}"
-        bindtap="handlePublish"
-      >{{publishing ? '发布中' : '发布'}}</view>
+<view class="page-create" style="padding-top: {{statusBarHeight}}px; padding-right: {{navCapsuleInsetRight}}px;">
+  <view class="nav-bar" style="height: {{capsuleHeight}}px;">
+    <view class="nav-close" bindtap="goBack">✕</view>
+    <view class="nav-title">发帖</view>
+    <view class="nav-submit {{canPublish ? '' : 'is-disabled'}}" bindtap="handlePublish">
+      {{publishing ? '发布中' : '发布'}}
     </view>
   </view>
 
-  <!-- ② 发布到专区选择 -->
-  <view class="zone-selector" bindtap="openZonePicker">
-    <view class="zone-selector-label">发布到：</view>
-    <view class="zone-selector-value {{showZonePlaceholder ? 'is-placeholder' : ''}}">
-      {{showZonePlaceholder ? '请选择专区 ▾' : selectedZoneName + ' ▾'}}
-    </view>
+  <view class="topic-row-wrapper">
+    <view class="topic-row-label">选择话题</view>
+    <scroll-view class="topic-row" scroll-x="{{true}}" enable-flex="{{true}}" show-scrollbar="{{false}}">
+      <view class="topic-row-inner">
+        <view
+          wx:for="{{topics}}"
+          wx:key="topicId"
+          class="topic-chip {{selectedTopicId === item.topicId ? 'is-active' : ''}}"
+          data-id="{{item.topicId}}"
+          data-name="{{item.topicName}}"
+          bindtap="onTopicTap"
+        >{{item.topicName}}</view>
+      </view>
+    </scroll-view>
   </view>
 
-  <!-- ③ 内容类型选择 -->
-  <view wx:if="{{contentTypes.length > 0}}" class="type-section">
-    <view class="type-label">内容类型</view>
-    <view class="type-row">
-      <view
-        wx:for="{{contentTypes}}"
-        wx:key="key"
-        class="type-chip {{selectedContentType === item.key ? 'is-active' : ''}}"
-        data-key="{{item.key}}"
-        bindtap="onContentTypeTap"
-      >{{item.label}}</view>
-    </view>
-  </view>
-
-  <!-- ④ 标题输入框 -->
-  <view class="title-section">
-    <input
-      class="title-input"
-      placeholder="{{titlePlaceholder}}"
-      placeholder-class="title-placeholder"
-      maxlength="100"
-      value="{{title}}"
-      bindinput="onTitleInput"
-    />
-  </view>
-
-  <!-- ⑤ 正文输入框 -->
   <textarea
     class="editor"
-    style="min-height: {{editorMinHeight}}"
-    maxlength="5000"
-    placeholder="请输入内容…"
-    placeholder-class="editor-placeholder"
+    placeholder="聊点什么？技术、八卦、吐槽都行"
     value="{{content}}"
-    bindinput="handleInput"
-  ></textarea>
+    bindinput="handleContentInput"
+    maxlength="5000"
+    auto-height="{{true}}"
+  />
 
-  <!-- ⑥ 话题标签区 -->
-  <view class="topic-section">
-    <view class="topic-header">
-      <view class="type-label">添加话题</view>
-      <view wx:if="{{topics.length < maxTopics}}" class="topic-add-btn" bindtap="toggleTopicInput">+ 添加话题</view>
-    </view>
-    <view wx:if="{{showTopicInput}}" class="topic-input-row">
-      <input
-        class="topic-input"
-        placeholder="输入话题后回车"
-        maxlength="20"
-        value="{{topicInput}}"
-        bindinput="onTopicInput"
-        bindconfirm="addTopic"
-      />
-    </view>
-    <view wx:if="{{topics.length > 0}}" class="topic-tags-row">
-      <view
-        wx:for="{{topics}}"
-        wx:key="*this"
-        class="topic-tag"
-      >
-        <text>#{{item}}</text>
-        <text class="topic-tag-remove" data-index="{{index}}" bindtap="removeTopic">✕</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- ⑦ 底部工具栏 -->
   <view class="bottom-bar" style="padding-bottom: env(safe-area-inset-bottom);">
-    <view class="toolbar-left">
-      <view class="tool-btn" bindtap="handleAddImage">
-        <text class="tool-icon">📷</text>
-      </view>
-      <view class="tool-btn" bindtap="handleAddAttachment">
-        <text class="tool-icon">📎</text>
-      </view>
-      <view wx:for="{{images}}" wx:key="*this" class="image-cell">图</view>
-      <view wx:if="{{images.length > 0}}" class="image-add" bindtap="handleAddImage">+</view>
-    </view>
-    <view class="toolbar-right">
-      <switch
-        class="anon-switch"
-        color="#2A7FFF"
-        checked="{{anonymous}}"
-        bindchange="handleAnonymousChange"
-      />
+    <view class="anon-row">
+      <switch color="#3B82F6" checked="{{isAnonymous}}" bindchange="onAnonToggle" />
       <text class="anon-label">匿名发布</text>
-    </view>
-  </view>
-
-  <!-- 匿名提示 -->
-  <view wx:if="{{anonymous}}" class="anon-tip">
-    匿名发布后，其他用户将看不到你的身份信息
-  </view>
-
-  <!-- 专区选择 BottomSheet -->
-  <view wx:if="{{showZonePicker}}" class="picker-overlay" bindtap="closeZonePicker">
-    <view class="picker-sheet" catchtap="">
-      <!-- Title -->
-      <view class="picker-header">
-        <text class="picker-title">选择专区</text>
-        <text class="picker-close" bindtap="closeZonePicker">✕</text>
-      </view>
-
-      <!-- Search -->
-      <view class="picker-search">
-        <input
-          class="search-input"
-          placeholder="搜索专区…"
-          placeholder-class="search-placeholder"
-          value="{{searchKeyword}}"
-          bindinput="onSearchInput"
-        />
-      </view>
-
-      <!-- Scrollable zone list -->
-      <scroll-view class="picker-list" scroll-y="{{true}}">
-        <!-- Recent zones -->
-        <block wx:if="{{recentZones.length > 0}}">
-          <view class="picker-section-title">最近发布</view>
-          <view class="recent-row">
-            <view
-              wx:for="{{recentZones}}"
-              wx:key="zoneId"
-              class="recent-chip"
-              data-zoneid="{{item.zoneId}}"
-              bindtap="selectZone"
-            >{{item.zoneName}}</view>
-          </view>
-        </block>
-
-        <!-- My zones -->
-        <view class="picker-section-title">我的专区</view>
-        <block wx:for="{{myZones}}" wx:key="zoneId">
-          <view
-            wx:if="{{!searchKeyword || item.zoneName.indexOf(searchKeyword) !== -1}}"
-            class="picker-zone-item"
-            data-zoneid="{{item.zoneId}}"
-            bindtap="selectZone"
-          >{{item.zoneName}}</view>
-        </block>
-
-        <!-- Browse all -->
-        <view class="picker-browse-all" bindtap="goToCommunityFromPicker">浏览全部专区 ></view>
-      </scroll-view>
     </view>
   </view>
 </view>
