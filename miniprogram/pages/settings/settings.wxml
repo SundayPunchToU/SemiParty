@@ -1,77 +1,62 @@
-<view class="page-settings">
-  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px;">
-    <view class="nav-inner">
+<view class="page-settings page-detail-shell">
+  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
+    <view class="nav-inner" style="min-height: {{capsuleHeight}}px;">
       <view class="back-btn" bindtap="goBack">‹</view>
       <view class="nav-title">设置</view>
-      <view style="width: 56rpx;"></view>
+      <view class="nav-placeholder"></view>
     </view>
   </view>
 
-  <!-- 第一组 -->
-  <view class="card-group">
-    <view class="card-row" bindtap="goPrivacy">
+  <view class="settings-group card">
+    <view class="settings-row" bindtap="goPrivacy">
       <text class="row-text">账号与安全</text>
-      <view class="row-right">
-        <text class="row-arrow">></text>
-      </view>
+      <text class="row-arrow">›</text>
     </view>
-    <view class="card-row" bindtap="goPrivacy">
+    <view class="settings-row" bindtap="goPrivacy">
       <text class="row-text">隐私设置</text>
-      <view class="row-right">
-        <text class="row-arrow">></text>
-      </view>
+      <text class="row-arrow">›</text>
     </view>
-    <view class="card-row" bindtap="goNotification">
+    <view class="settings-row" bindtap="goNotification">
       <text class="row-text">通知设置</text>
-      <view class="row-right">
-        <text class="row-arrow">></text>
-      </view>
+      <text class="row-arrow">›</text>
     </view>
-    <view class="card-row">
+    <view class="settings-row">
       <text class="row-text">深色模式</text>
-      <view class="row-right">
-        <switch checked="{{darkMode}}" color="#2A7FFF" bindchange="onDarkModeChange" />
-      </view>
+      <switch checked="{{darkMode}}" color="#3b82f6" bindchange="onDarkModeChange" />
     </view>
-    <view class="card-row" bindtap="handleFontSize">
+    <view class="settings-row" bindtap="handleFontSize">
       <text class="row-text">字体大小</text>
       <view class="row-right">
         <text class="row-value">标准</text>
-        <text class="row-arrow">></text>
+        <text class="row-arrow">›</text>
       </view>
     </view>
   </view>
 
-  <!-- 第二组 -->
-  <view class="card-group">
-    <view class="card-row" bindtap="handleClearCache">
+  <view class="settings-group card">
+    <view class="settings-row" bindtap="handleClearCache">
       <text class="row-text">清除缓存</text>
       <view class="row-right">
         <text class="row-value">128.5 MB</text>
-        <text class="row-arrow">></text>
+        <text class="row-arrow">›</text>
       </view>
     </view>
-    <view class="card-row" bindtap="handleFeedback">
+    <view class="settings-row" bindtap="handleFeedback">
       <text class="row-text">意见反馈</text>
-      <view class="row-right">
-        <text class="row-arrow">></text>
-      </view>
+      <text class="row-arrow">›</text>
     </view>
-    <view class="card-row" bindtap="handleAbout">
-      <text class="row-text">关于芯社区</text>
-      <view class="row-right">
-        <text class="row-arrow">></text>
-      </view>
+    <view class="settings-row" bindtap="handleAbout">
+      <text class="row-text">关于 SemiParty</text>
+      <text class="row-arrow">›</text>
     </view>
-    <view class="card-row" bindtap="handleCheckUpdate">
+    <view class="settings-row" bindtap="handleCheckUpdate">
       <text class="row-text">检查更新</text>
       <view class="row-right">
         <text class="row-value">v2.0.0</text>
-        <text class="row-arrow">></text>
+        <text class="row-arrow">›</text>
       </view>
     </view>
   </view>
 
-  <!-- 退出登录 -->
-  <view class="logout-card" bindtap="handleLogout">退出登录</view>
+  <view class="logout-btn btn btn-secondary-muted" bindtap="handleLogout">退出登录</view>
 </view>

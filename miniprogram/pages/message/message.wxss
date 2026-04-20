@@ -32,6 +32,13 @@
   padding: 0 4rpx 16rpx;
 }
 
+.search-placeholder {
+  padding: 40rpx 0;
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
+}
+
 .interaction-item,
 .msg-item,
 .notif-item {
@@ -278,6 +285,7 @@
   font-size: var(--font-base);
   color: #fff;
   flex-shrink: 0;
+  pointer-events: auto;
 }
 
 .swipe-btn-read {
@@ -300,6 +308,7 @@
   z-index: 2;
   background: transparent;
   transition: transform 0.2s ease;
+  will-change: transform;
 }
 
 .is-pinned {

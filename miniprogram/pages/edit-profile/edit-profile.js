@@ -7,8 +7,8 @@ const ROLE_OPTIONS = [
   { key: "yield", name: "良率分析师" },
   { key: "pi", name: "整合工程师" },
   { key: "test", name: "封测工程师" },
-  { key: "eda", name: "EDA工程师" },
-  { key: "quality", name: "品质工程师" },
+  { key: "eda", name: "EDA 工程师" },
+  { key: "quality", name: "质量工程师" },
   { key: "fae", name: "FAE" },
   { key: "hr", name: "HR" },
   { key: "purchase", name: "采购经理" },
@@ -19,16 +19,17 @@ const ROLE_OPTIONS = [
 
 const EXP_OPTIONS = [
   { key: "in_school", name: "在校" },
-  { key: "lt1", name: "1年以内" },
-  { key: "1-3", name: "1-3年" },
-  { key: "3-5", name: "3-5年" },
-  { key: "5-10", name: "5-10年" },
-  { key: "10+", name: "10年+" },
+  { key: "lt1", name: "1 年以内" },
+  { key: "1-3", name: "1-3 年" },
+  { key: "3-5", name: "3-5 年" },
+  { key: "5-10", name: "5-10 年" },
+  { key: "10+", name: "10 年以上" },
 ];
 
 Page({
   data: {
     statusBarHeight: 24,
+    navCapsuleInsetRight: 12,
     hasChanged: false,
     loading: false,
     saving: false,
@@ -61,8 +62,7 @@ Page({
 
   onInput(e) {
     const field = e.currentTarget.dataset.field;
-    const value = e.detail.value;
-    this.setData({ [`form.${field}`]: value });
+    this.setData({ [`form.${field}`]: e.detail.value });
     this._checkChanged();
   },
 
@@ -78,16 +78,9 @@ Page({
 
   _buildSnapshot(nextState = {}) {
     const form = nextState.form || this.data.form;
-    const roleIndex =
-      nextState.roleIndex !== undefined ? nextState.roleIndex : this.data.roleIndex;
-    const expIndex =
-      nextState.expIndex !== undefined ? nextState.expIndex : this.data.expIndex;
-
-    return JSON.stringify({
-      form,
-      roleIndex,
-      expIndex,
-    });
+    const roleIndex = nextState.roleIndex !== undefined ? nextState.roleIndex : this.data.roleIndex;
+    const expIndex = nextState.expIndex !== undefined ? nextState.expIndex : this.data.expIndex;
+    return JSON.stringify({ form, roleIndex, expIndex });
   },
 
   _cacheOriginal() {
@@ -98,34 +91,31 @@ Page({
   },
 
   _applyProfile(profile) {
-    const roleIndex = Math.max(
-      this.data.roleOptions.findIndex((item) => item.name === (profile.role || profile.title || "")),
-      0
-    );
-    const expIndex = Math.max(
-      this.data.expOptions.findIndex((item) => item.name === (profile.experience || "")),
-      0
-    );
-
-    this.setData({
-      form: {
-        nickname: profile.nickname || profile.nickName || "",
-        bio: profile.bio || "",
-        company: profile.company || "",
-        city: profile.city || "",
+    const roleIndex = Math.max(this.data.roleOptions.findIndex((item) => item.name === (profile.role || profile.title || "")), 0);
+    const expIndex = Math.max(this.data.expOptions.findIndex((item) => item.name === (profile.experience || "")), 0);
+    this.setData(
+      {
+        form: {
+          nickname: profile.nickname || profile.nickName || "",
+          bio: profile.bio || "",
+          company: profile.company || "",
+          city: profile.city || "",
+        },
+        roleIndex,
+        expIndex,
       },
-      roleIndex,
-      expIndex,
-    }, () => this._cacheOriginal());
+      () => this._cacheOriginal()
+    );
   },
 
   _checkChanged() {
-    const current = this._buildSnapshot();
-    this.setData({ hasChanged: current !== this.data.original });
+    this.setData({ hasChanged: this._buildSnapshot() !== this.data.original });
   },
 
   async handleSave() {
-    if (!this.data.hasChanged || this.data.saving) return;
+    if (!this.data.hasChanged || this.data.saving) {
+      return;
+    }
 
     const nickname = this.data.form.nickname.trim();
     if (!nickname) {
@@ -150,15 +140,18 @@ Page({
     this.setData({ saving: true });
     try {
       await api.updateUser(payload);
-      this.setData({
-        form: {
-          ...this.data.form,
-          nickname,
-          bio: payload.bio,
-          company: payload.company,
-          city: payload.city,
+      this.setData(
+        {
+          form: {
+            ...this.data.form,
+            nickname,
+            bio: payload.bio,
+            company: payload.company,
+            city: payload.city,
+          },
         },
-      }, () => this._cacheOriginal());
+        () => this._cacheOriginal()
+      );
       wx.showToast({ title: "保存成功", icon: "success" });
       setTimeout(() => wx.navigateBack(), 500);
     } catch (error) {
@@ -170,8 +163,7 @@ Page({
   },
 
   onChangeAvatar() {
-    console.log("选择头像");
-    wx.showToast({ title: "待接入", icon: "none" });
+    wx.showToast({ title: "暂未开放", icon: "none" });
   },
 
   goBack() {

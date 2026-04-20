@@ -1,315 +1,118 @@
 .community-shell {
-  position: relative;
-  background: var(--color-bg-page);
   min-height: 100vh;
   padding-bottom: calc(env(safe-area-inset-bottom) + 120rpx);
 }
 
-/* === STEP 1.5 修改开始：模块 A 顶部栏 === */
 .community-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32rpx;
 }
 
 .community-title {
-  font-size: 36rpx;
+  font-size: 40rpx;
   font-weight: 700;
   color: var(--color-text-primary);
 }
 
-.search-icon {
-  width: 72rpx;
-  height: 72rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.search-icon-text {
-  font-size: 36rpx;
-}
-/* === STEP 1.5 修改结束 === */
-
-/* === STEP 1.5 修改开始：模块 B 晶圆茶水间入口卡片 === */
-.tea-room-card {
-  margin: 12rpx 32rpx 16rpx;
-  padding: 32rpx;
-  border-radius: 24rpx;
-  background: linear-gradient(to right, #3a2c1f, var(--color-bg-page));
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.tea-room-left {
-  flex: 1;
-}
-
-.tea-room-name {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin-bottom: 8rpx;
-}
-
-.tea-room-desc {
-  font-size: 26rpx;
-  color: var(--color-text-secondary);
-  margin-bottom: 8rpx;
-}
-
-.tea-room-stats {
+.community-subtitle {
+  margin-top: 8rpx;
   font-size: 24rpx;
-  color: var(--color-text-tertiary);
-}
-
-.tea-room-arrow {
-  font-size: 48rpx;
   color: var(--color-text-secondary);
-  margin-left: 24rpx;
-}
-/* === STEP 1.5 修改结束 === */
-
-/* === STEP 1.5 修改开始：模块 C 我的专区 === */
-.my-zones-section {
-  margin-bottom: 24rpx;
 }
 
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32rpx;
-  margin-bottom: 16rpx;
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.section-more {
-  font-size: 28rpx;
-  color: var(--color-text-tertiary);
-}
-
-.my-zones-scroll {
-  white-space: nowrap;
-  padding: 0 32rpx;
-}
-
-.my-zones-row {
-  display: flex;
-  gap: 24rpx;
-}
-
-.my-zone-card {
-  position: relative;
-  width: 144rpx;
-  height: 144rpx;
-  border-radius: 24rpx;
-  background: var(--color-bg-card);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.my-zone-name {
-  font-size: 26rpx;
-  color: var(--color-text-primary);
-  text-align: center;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  padding: 8rpx;
-}
-
-.my-zone-dot {
-  position: absolute;
-  top: 8rpx;
-  right: 8rpx;
-  width: 16rpx;
-  height: 16rpx;
-  border-radius: 50%;
-  background: var(--color-danger);
-}
-
-.my-zones-empty {
-  padding: 32rpx;
-  text-align: center;
-}
-
-.empty-text {
-  font-size: 28rpx;
-  color: var(--color-text-tertiary);
-  margin-bottom: 12rpx;
-}
-
-.empty-action {
-  font-size: 28rpx;
-  color: var(--color-text-tertiary);
-}
-/* === STEP 1.5 修改结束 === */
-
-/* === STEP 1.5 修改开始：模块 D 专区分类导航 === */
-.zone-section {
-  padding: 0 32rpx;
-}
-
-.category-chips-scroll {
-  white-space: nowrap;
-  margin-bottom: 24rpx;
-}
-
-.category-chips-row {
-  display: flex;
-  gap: 16rpx;
-}
-
-.zone-category-chip {
-  flex-shrink: 0;
-  padding: 16rpx 32rpx;
-  border-radius: 40rpx;
-  background: var(--color-bg-card);
-  color: var(--color-text-secondary);
-  font-size: 28rpx;
-}
-
-.zone-category-chip.is-active {
+.community-action {
+  min-width: 112rpx;
+  height: 60rpx;
+  padding: 0 24rpx;
+  border-radius: 999rpx;
   background: var(--color-primary);
   color: var(--color-primary-text);
-}
-
-.zone-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.zone-list-loading {
-  text-align: center;
-  font-size: 28rpx;
-  color: var(--color-text-tertiary);
-  padding: 48rpx 0;
-}
-
-.zone-item {
-  display: flex;
-  align-items: center;
-  height: 144rpx;
-  padding: 0 16rpx;
-  border-bottom: 1rpx solid var(--color-divider);
-}
-
-.zone-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  background: var(--color-bg-card);
+  font-size: 24rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.community-search {
+  height: 84rpx;
+  padding: 0 24rpx;
+  margin: 24rpx 0 18rpx;
+  border-radius: 24rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.community-search-icon {
   font-size: 28rpx;
-  color: var(--color-text-primary);
-  font-weight: 700;
-  flex-shrink: 0;
-  margin-right: 24rpx;
-}
-
-.zone-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.zone-name {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin-bottom: 6rpx;
-}
-
-.zone-meta {
-  font-size: 24rpx;
   color: var(--color-text-tertiary);
 }
 
-.zone-btn {
-  flex-shrink: 0;
-  padding: 12rpx 24rpx;
-  border-radius: 32rpx;
+.community-search-text {
   font-size: 24rpx;
-  margin-left: 16rpx;
-}
-
-.zone-btn-joined {
-  background: var(--color-bg-elevated);
   color: var(--color-text-secondary);
 }
 
-.zone-btn-join {
-  background: transparent;
-  color: var(--color-primary);
-  border: 2rpx solid var(--color-primary);
-}
-/* === STEP 1.5 修改结束 === */
-
-.community-feed-section {
-  margin-top: 20rpx;
+.tea-room-summary {
+  padding: 28rpx;
+  border-radius: 28rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  box-shadow: var(--shadow-card);
 }
 
-.community-feed-list {
-  padding: 0 20rpx;
-}
-
-.feed-loading,
-.feed-footer {
-  padding: 32rpx;
-  text-align: center;
-  font-size: 26rpx;
-  color: var(--color-text-tertiary);
-}
-
-
-/* 浮动发帖按钮已移至底部导航栏中央 */
-
-/* === Step 2.5 增强：创建专区入口 === */
-.create-zone-entry {
-  padding: 48rpx 32rpx 80rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.create-zone-title {
+.tea-room-summary-title {
   font-size: 32rpx;
   font-weight: 700;
   color: var(--color-text-primary);
-  margin-bottom: 24rpx;
 }
 
-.create-zone-card {
-  background: var(--color-bg-card);
-  border-radius: 24rpx;
-  padding: 40rpx;
+.tea-room-summary-text {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.topic-scroll {
+  margin: 24rpx 0 20rpx;
+  white-space: nowrap;
+}
+
+.topic-row {
   display: flex;
-  flex-direction: column;
+  gap: 14rpx;
+}
+
+.topic-chip {
+  height: 60rpx;
+  padding: 0 24rpx;
+  border-radius: 999rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 24rpx;
+  display: inline-flex;
   align-items: center;
-  width: 100%;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.create-zone-card-title {
-  font-size: 32rpx;
-  font-weight: 700;
+.topic-chip.is-active {
+  border-color: var(--color-primary);
   color: var(--color-primary);
-  margin-bottom: 12rpx;
 }
 
-.create-zone-card-desc {
-  font-size: 26rpx;
-  color: var(--color-text-tertiary);
+.community-placeholder,
+.community-footer {
+  padding: 36rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
 }
-/* === Step 2.5 增强结束 === */
+
+.community-feed {
+  padding-bottom: 40rpx;
+}

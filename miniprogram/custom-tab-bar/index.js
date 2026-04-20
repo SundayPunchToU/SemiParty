@@ -30,10 +30,9 @@ Component({
     ],
     showPostPanel: false,
     postActions: [
-      { action: "tea-room", title: "茶水间发言", subtitle: "匿名轻内容", icon: "茶" },
-      { action: "zone", title: "发帖到专区", subtitle: "选择圈子发布", icon: "圈" },
-      { action: "article", title: "写一篇文章", subtitle: "长内容分享", icon: "文" },
-      { action: "qa", title: "提个问题", subtitle: "快速求助讨论", icon: "问" },
+      { action: "default", title: "发帖", subtitle: "进入统一发帖页", icon: "帖" },
+      { action: "article", title: "写文章", subtitle: "长内容预填", icon: "文" },
+      { action: "qa", title: "提问题", subtitle: "问答预填", icon: "问" },
     ],
   },
 
@@ -58,7 +57,7 @@ Component({
 
       const summary = app.globalData.unreadSummary || {};
       this.setData({
-        "list[2].unreadCount": summary.totalUnread || 0,
+        "list[2].unreadCount": summary.totalUnread || summary.privateUnread || 0,
       });
 
       if (refreshUnread && typeof app.refreshUnreadSummary === "function") {
@@ -90,18 +89,14 @@ Component({
       this.setData({ showPostPanel: false });
 
       switch (action) {
-        case "tea-room":
-          wx.navigateTo({ url: "/pages/post-create/post-create?zoneId=tea-room&isAnonymous=true" });
-          break;
-        case "zone":
-          wx.navigateTo({ url: "/pages/post-create/post-create?showZonePicker=true" });
-          break;
         case "article":
           wx.navigateTo({ url: "/pages/post-create/post-create?contentType=article" });
           break;
         case "qa":
           wx.navigateTo({ url: "/pages/post-create/post-create?contentType=qa" });
           break;
+        default:
+          wx.navigateTo({ url: "/pages/post-create/post-create" });
       }
     },
   },

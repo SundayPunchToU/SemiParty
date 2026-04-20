@@ -428,59 +428,6 @@ function normalizeTeaRoomTopic(topic = {}) {
   };
 }
 
-function getMockZoneCatalog() {
-  const zoneData = require("./mock-zone-data");
-  const catalog = Object.entries(zoneData.zonesByCategory || {}).flatMap(([category, list]) =>
-    (list || []).map((zone) =>
-      normalizeZone({
-        ...zone,
-        category,
-      })
-    )
-  );
-
-  if (!catalog.find((item) => item.zoneId === "tea-room")) {
-    catalog.unshift(
-      normalizeZone({
-        zoneId: "tea-room",
-        zoneName: "晶圆茶水间",
-        zoneDesc: "半导体从业者的轻社交讨论区",
-        category: "special",
-        memberCount: 50000,
-        todayPostCount: 320,
-        totalPostCount: 18500,
-      })
-    );
-  }
-
-  return catalog;
-}
-
-function getMockZoneById(zoneId) {
-  return getMockZoneCatalog().find((item) => item.zoneId === zoneId) || null;
-}
-
-function getMockUserZoneList() {
-  const zoneData = require("./mock-zone-data");
-  const zoneMap = getMockZoneCatalog().reduce((acc, zone) => {
-    acc[zone.zoneId] = zone;
-    return acc;
-  }, {});
-
-  return (zoneData.myZones || []).map((item) =>
-    normalizeZone({
-      ...(zoneMap[item.zoneId] || {}),
-      ...item,
-      zoneId: item.zoneId,
-      zoneName: item.zoneName || zoneMap[item.zoneId]?.zoneName || "",
-    })
-  );
-}
-
-function resolveMockZoneByCategory(category) {
-  return getMockZoneCatalog().filter((item) => item.category === category);
-}
-
 function sortPosts(list, sort) {
   const factor = sort === "hot" ? "likeCount" : sort === "reply" ? "commentCount" : "createdAt";
   const getSortValue = (item) => {
@@ -490,62 +437,6 @@ function sortPosts(list, sort) {
     return safeNumber(item[factor], 0);
   };
   return list.slice().sort((left, right) => getSortValue(right) - getSortValue(left));
-}
-
-function getMockZonePostResult({ zoneId, tab = "all", sort = "latest", page = 1, size = 20 }) {
-  const zone = getMockZoneById(zoneId) || normalizeZone({ zoneId });
-  const topicSeeds = TEA_ROOM_TOPIC_FALLBACKS.slice(1);
-  const basePosts = deepClone(mockData.postList)
-    .map((item, index) => {
-      const fallbackTopic = topicSeeds[index % topicSeeds.length] || TEA_ROOM_TOPIC_FALLBACKS[0];
-      const sourceTags = Array.isArray(item.tags) && item.tags.length ? item.tags : [];
-      const tags =
-        zoneId === "tea-room"
-          ? [fallbackTopic.topicName]
-          : sourceTags.length
-          ? sourceTags
-          : item.topic?.text
-          ? [item.topic.text]
-          : [];
-
-      const contentType =
-        zoneId === "tea-room"
-          ? "chat"
-          : tab !== "all" && tab !== "best" && tab !== "hot"
-          ? tab
-          : item.contentType || "discuss";
-
-      return normalizePost({
-        ...item,
-        _id: item._id || item.id || `${zoneId}_mock_${index}`,
-        id: item._id || item.id || `${zoneId}_mock_${index}`,
-        zoneId,
-        zoneName: zone.zoneName,
-        category: zone.category,
-        contentType,
-        tags,
-        isBest: index % 4 === 0,
-      });
-    })
-    .filter(Boolean);
-
-  let list = basePosts;
-  if (tab === "best") {
-    list = list.filter((item) => item.isBest);
-  } else if (tab !== "all" && tab !== "hot") {
-    list = list.filter((item) => item.contentType === tab);
-  }
-
-  const sorted = sortPosts(list, sort);
-  const start = (page - 1) * size;
-  const data = sorted.slice(start, start + size);
-
-  return {
-    posts: data,
-    total: sorted.length,
-    page,
-    size,
-  };
 }
 
 function getMockPostsByTopic({ topicId = "hot", sort = "latest", page = 1, size = 20 } = {}) {
@@ -576,7 +467,6 @@ function getMockCompanyList(page = 1, size = 20) {
 function createEmptyUnreadSummary() {
   return {
     privateUnread: 0,
-    groupUnread: 0,
     totalUnread: 0,
     hasUnread: false,
   };
@@ -698,7 +588,6 @@ function normalizeUserProfile(record) {
       favoriteCount: stats.favoriteCount || record.collectCount || 0,
       ...stats,
     },
-    joinedZones: record.joinedZones || [],
     badges: record.badges || [],
   };
 }
@@ -1030,7 +919,7 @@ module.exports = {
           contentType: pick(contentTypes),
           isAnonymous: Math.random() < 0.15,
           author: {
-            name: item.source || "芯社区用户",
+            name: item.source || "SemiParty 用户",
             avatarText: (item.source || "U").charAt(0),
             avatarBg: "#dce8ff",
             avatarColor: "#165dc6",
@@ -1150,26 +1039,9 @@ module.exports = {
       },
       async () => {
         await delay(120);
-        let zoneName = "";
-        let category = "hot";
-        if (data.zoneId) {
-          try {
-            const zoneData = require("./mock-zone-data");
-            const allZones = Object.entries(zoneData.zonesByCategory || {}).flatMap(([zoneCategory, list]) =>
-              (list || []).map((zone) => ({ ...zone, _category: zoneCategory }))
-            );
-            const found = allZones.find(z => z.zoneId === data.zoneId);
-            if (found) {
-              zoneName = found.zoneName;
-              category = found._category || category;
-            }
-            if (data.zoneId === "tea-room") zoneName = "晶圆茶水间";
-          } catch (e) {}
-        }
-        if (data.zoneId === "tea-room") {
-          zoneName = "茶水间";
-          category = "special";
-        }
+        const topicId = data.topicId || inferTopicIdFromName(data.topicName || "");
+        const topicName = data.topicName || "";
+        const category = data.category || "hot";
         const mockId = `post_${Date.now()}`;
         const createdAt = new Date().toISOString();
         return {
@@ -1178,9 +1050,12 @@ module.exports = {
             _id: mockId,
             id: mockId,
             ...data,
-            zoneName,
+            topicId,
+            topicName,
+            zoneName: topicName,
             category,
-            contentType: data.contentType || "discuss",
+            topic: topicName ? { text: topicName, type: "blue" } : null,
+            contentType: data.contentType || "chat",
             tags: Array.isArray(data.tags) ? data.tags : [],
             author: {
               userId: "mock_openid",
@@ -1469,23 +1344,15 @@ module.exports = {
 
   async getUnreadSummary() {
     try {
-      const [privateRes, groupRes] = await Promise.all([
-        module.exports.getChatList("private"),
-        module.exports.getChatList("group"),
-      ]);
+      const privateRes = await module.exports.getChatList("private");
       const privateUnread = (privateRes.data || []).reduce(
-        (sum, item) => sum + safeNumber(item.unreadCount, item.unread),
-        0
-      );
-      const groupUnread = (groupRes.data || []).reduce(
         (sum, item) => sum + safeNumber(item.unreadCount, item.unread),
         0
       );
       return publishUnreadSummary({
         privateUnread,
-        groupUnread,
-        totalUnread: privateUnread + groupUnread,
-        hasUnread: privateUnread + groupUnread > 0,
+        totalUnread: privateUnread,
+        hasUnread: privateUnread > 0,
       });
     } catch (error) {
       console.warn("getUnreadSummary failed", error);
@@ -1862,111 +1729,6 @@ module.exports = {
     );
   },
 
-  async getUserZones() {
-    return execute(
-      async () => {
-        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "getUserZones" } });
-        return {
-          ...(res.result || {}),
-          zones: (res.result?.zones || []).map(normalizeZone).filter(Boolean),
-        };
-      },
-      async () => {
-        await delay(100);
-        return { zones: getMockUserZoneList() };
-      },
-      { fallbackOnCloudError: true }
-    );
-  },
-
-  async getZoneListByCategory(category, page = 1, size = 20) {
-    return execute(
-      async () => {
-        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "getZoneList", category, page, size } });
-        return {
-          ...(res.result || {}),
-          zones: (res.result?.zones || []).map(normalizeZone).filter(Boolean),
-        };
-      },
-      async () => {
-        await delay(100);
-        const list = resolveMockZoneByCategory(category);
-        return { zones: list, total: list.length, page, size };
-      },
-      { fallbackOnCloudError: true }
-    );
-  },
-
-  async getZoneDetail(zoneId) {
-    return execute(
-      async () => {
-        const res = await wx.cloud.callFunction({
-          name: "zoneService",
-          data: { action: "getZoneDetail", zoneId },
-        });
-        return normalizeZone(res.result);
-      },
-      async () => {
-        await delay(80);
-        return normalizeZone(getMockZoneById(zoneId));
-      },
-      { fallbackOnCloudError: true }
-    );
-  },
-
-  async getZonePosts({ zoneId, tab = "all", sort = "latest", page = 1, size = PAGE_SIZE } = {}) {
-    return execute(
-      async () => {
-        const res = await wx.cloud.callFunction({
-          name: "zoneService",
-          data: { action: "getZonePosts", zoneId, tab, sort, page, size },
-        });
-        const total = safeNumber(res.result?.total);
-        return {
-          data: (res.result?.posts || []).map(normalizePost).filter(Boolean),
-          total,
-          page,
-          size,
-          hasMore: page * size < total,
-        };
-      },
-      async () => {
-        await delay(100);
-        const result = getMockZonePostResult({ zoneId, tab, sort, page, size });
-        return {
-          data: result.posts,
-          total: result.total,
-          page,
-          size,
-          hasMore: page * size < result.total,
-        };
-      },
-      { fallbackOnCloudError: true }
-    );
-  },
-
-  async getZonePinned(zoneId) {
-    return execute(
-      async () => {
-        const res = await wx.cloud.callFunction({
-          name: "zoneService",
-          data: { action: "getZonePinned", zoneId },
-        });
-        return {
-          data: (res.result?.posts || []).map(normalizePost).filter(Boolean),
-        };
-      },
-      async () => {
-        await delay(80);
-        const result = getMockZonePostResult({ zoneId, tab: "best", sort: "latest", page: 1, size: 3 });
-        return {
-          data: result.posts,
-        };
-      },
-      { fallbackOnCloudError: true }
-    );
-  },
-
   async getTeaRoomTopics() {
     return execute(
       async () => {
@@ -1988,31 +1750,5 @@ module.exports = {
     );
   },
 
-  async joinZone(zoneId) {
-    return execute(
-      async () => {
-        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "joinZone", zoneId } });
-        return res.result;
-      },
-      async () => {
-        await delay(120);
-        return { success: true, message: "加入成功" };
-      },
-      { fallbackOnCloudError: true }
-    );
-  },
 
-  async leaveZone(zoneId) {
-    return execute(
-      async () => {
-        const res = await wx.cloud.callFunction({ name: "zoneService", data: { action: "leaveZone", zoneId } });
-        return res.result;
-      },
-      async () => {
-        await delay(120);
-        return { success: true, message: "退出成功" };
-      },
-      { fallbackOnCloudError: true }
-    );
-  },
 };

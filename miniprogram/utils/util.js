@@ -3,29 +3,39 @@ function deepClone(data) {
 }
 
 function formatCount(value) {
-  if (value >= 10000) {
-    return `${(value / 10000).toFixed(1).replace(".0", "")}w`;
+  const num = Number(value || 0);
+  if (num >= 10000) {
+    return `${(num / 10000).toFixed(1).replace(".0", "")}w`;
   }
 
-  if (value >= 1000) {
-    return `${(value / 1000).toFixed(1).replace(".0", "")}k`;
+  if (num >= 1000) {
+    return `${(num / 1000).toFixed(1).replace(".0", "")}k`;
   }
 
-  return `${value}`;
+  return `${num}`;
+}
+
+function parseSafeDate(dateText) {
+  if (!dateText) {
+    return null;
+  }
+  const date = new Date(dateText);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function formatRelative(dateText) {
-  if (!dateText) {
-    return "";
+  const date = parseSafeDate(dateText);
+  if (!date) {
+    return typeof dateText === "string" ? dateText : "";
   }
 
-  const date = new Date(dateText);
   const diff = Date.now() - date.getTime();
   const hour = 60 * 60 * 1000;
   const day = 24 * hour;
 
   if (diff < hour) {
-    return `${Math.max(1, Math.floor(diff / (10 * 60 * 1000)))}0m ago`;
+    const minutes = Math.max(1, Math.floor(diff / (10 * 60 * 1000)));
+    return `${minutes}0m ago`;
   }
 
   if (diff < day) {
@@ -46,16 +56,16 @@ function getNavMetrics() {
     statusBarHeight: app.globalData.statusBarHeight,
     navBarHeight: app.globalData.navBarHeight,
     capsuleHeight: app.globalData.capsuleHeight,
-    navCapsuleInsetRight: app.globalData.navCapsuleInsetRight
+    navCapsuleInsetRight: app.globalData.navCapsuleInsetRight,
   };
 }
 
 function formatChatTime(dateText) {
-  if (!dateText) {
-    return "";
+  const date = parseSafeDate(dateText);
+  if (!date) {
+    return typeof dateText === "string" ? dateText : "";
   }
 
-  const date = new Date(dateText);
   const now = new Date();
   const sameDay = date.toDateString() === now.toDateString();
 
@@ -77,5 +87,5 @@ module.exports = {
   formatCount,
   formatRelative,
   formatChatTime,
-  getNavMetrics
+  getNavMetrics,
 };

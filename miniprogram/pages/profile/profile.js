@@ -1,6 +1,6 @@
 const { getNavMetrics, formatRelative } = require("../../utils/util");
 const api = require("../../utils/api");
-const { myProfile, myFavorites, myViewHistory, CONTENT_TYPE_MAP } = require("../../mock/profileData");
+const { myProfile, myPosts, myFavorites, myViewHistory, CONTENT_TYPE_MAP } = require("../../mock/profileData");
 
 const CONTENT_TABS = [
   { key: "posts", label: "我的帖子" },
@@ -12,6 +12,13 @@ function mapTypeLabel(contentType) {
   return CONTENT_TYPE_MAP[contentType] || contentType || "动态";
 }
 
+function formatCount(value) {
+  const count = Number(value || 0);
+  if (count >= 10000) return `${(count / 10000).toFixed(1)}w`;
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
+  return String(count);
+}
+
 function mapProfile(profile = {}, posts = [], favorites = []) {
   return {
     ...myProfile,
@@ -20,9 +27,8 @@ function mapProfile(profile = {}, posts = [], favorites = []) {
     stats: {
       ...myProfile.stats,
       ...(profile.stats || {}),
-      postCount: posts.length || profile.stats?.postCount || profile.postCount || myProfile.stats.postCount,
-      favoriteCount:
-        favorites.length || profile.stats?.favoriteCount || profile.collectCount || myProfile.stats.favoriteCount,
+      postCount: posts.length || profile.postCount || myProfile.stats.postCount,
+      favoriteCount: favorites.length || profile.collectCount || myProfile.stats.favoriteCount,
     },
   };
 }
@@ -31,6 +37,7 @@ function mapPostItem(item = {}) {
   return {
     ...item,
     postId: item.postId || item.id || item._id || "",
+    topicName: item.topicName || item.zoneName || "",
     contentTypeLabel: mapTypeLabel(item.contentType),
     createdAtText: formatRelative(item.createdAt) || item.createdAt || "",
     likeCount: Number(item.likeCount || item.likes || 0),
@@ -45,17 +52,12 @@ function mapFavoriteItem(item = {}) {
     ...item,
     postId: item.targetId || item.postId || "",
     title: summary.title || item.title || "未命名内容",
-    topicName: summary.topicName || item.topicName || summary.zoneName || item.zoneName || "SemiParty",
+    topicName: summary.topicName || item.topicName || summary.zoneName || item.zoneName || "茶水间",
     likeCount: Number(summary.likeCount || item.likeCount || 0),
     commentCount: Number(summary.commentCount || item.commentCount || 0),
     savedAt: formatRelative(item.createdAt) || item.savedAt || "刚刚",
     author: {
-      nickname:
-        summary.authorName ||
-        summary.nickname ||
-        item.author?.nickname ||
-        item.author?.nickName ||
-        "SemiParty 用户",
+      nickname: summary.authorName || summary.nickname || item.author?.nickname || item.author?.nickName || "SemiParty 用户",
     },
   };
 }
@@ -65,7 +67,7 @@ function mapHistoryItem(item = {}) {
     ...item,
     postId: item.postId || item.targetId || item.id || "",
     viewedAt: formatRelative(item.createdAt) || item.viewedAt || "刚刚",
-    topicName: item.topicName || item.zoneName || "SemiParty",
+    topicName: item.topicName || item.zoneName || "茶水间",
   };
 }
 
@@ -124,35 +126,34 @@ Page({
   },
 
   _loadFallbackData() {
-    const fallbackPosts = require("../../mock/profileData").myPosts || [];
     this.setData({
       profile: myProfile,
-      myPosts: fallbackPosts.map(mapPostItem),
-      myFavorites: [...myFavorites],
-      myHistory: [...myViewHistory].map(mapHistoryItem),
+      myPosts: myPosts.map(mapPostItem),
+      myFavorites: myFavorites.map(mapFavoriteItem),
+      myHistory: myViewHistory.map(mapHistoryItem),
     });
   },
 
+  formatCount,
+
   onTabChange(e) {
     const key = e.currentTarget.dataset.key;
-    if (key === this.data.activeTab) return;
-    this.setData({ activeTab: key });
-  },
-
-  formatCount(n) {
-    if (n == null) return "0";
-    if (n >= 10000) return (n / 10000).toFixed(1) + "w";
-    if (n >= 1000) return (n / 1000).toFixed(1) + "k";
-    return String(n);
+    if (key && key !== this.data.activeTab) {
+      this.setData({ activeTab: key });
+    }
   },
 
   onStatTap(e) {
     const tab = e.currentTarget.dataset.tab;
     if (tab === "followers") {
       wx.navigateTo({ url: "/pages/follow-list/follow-list?type=followers" });
-    } else if (tab === "following") {
+      return;
+    }
+    if (tab === "following") {
       wx.navigateTo({ url: "/pages/follow-list/follow-list?type=following" });
-    } else if (tab === "posts" || tab === "favorites") {
+      return;
+    }
+    if (tab === "posts" || tab === "favorites") {
       this.setData({ activeTab: tab });
     }
   },
@@ -174,10 +175,6 @@ Page({
     wx.navigateTo({ url: "/pages/settings/settings" });
   },
 
-  goCommunity() {
-    wx.switchTab({ url: "/pages/community/community" });
-  },
-
   goFollowList(e) {
     const type = e.currentTarget.dataset.type || "following";
     wx.navigateTo({ url: `/pages/follow-list/follow-list?type=${type}` });
@@ -185,19 +182,19 @@ Page({
 
   clearHistory() {
     this.setData({ myHistory: [] });
-    wx.showToast({ title: "已清空本地记录", icon: "none" });
+    wx.showToast({ title: "浏览历史已清空", icon: "none" });
   },
 
   handleMenuTap(e) {
     const name = e.currentTarget.dataset.name;
-    wx.showToast({ title: `${name} 待接入`, icon: "none" });
+    wx.showToast({ title: `${name} 暂未开放`, icon: "none" });
   },
 
   handleLogout() {
     wx.showModal({
-      title: "提示",
-      content: "确定退出登录吗？",
-      confirmColor: "#FF4D4F",
+      title: "退出登录",
+      content: "确定退出当前账号吗？",
+      confirmColor: "#ef4444",
       success: (res) => {
         if (res.confirm) {
           wx.showToast({ title: "已退出登录", icon: "none" });

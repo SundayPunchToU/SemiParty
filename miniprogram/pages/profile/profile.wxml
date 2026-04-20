@@ -1,31 +1,28 @@
-<view class="page-profile">
+<view class="page-profile page-profile-shell">
   <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
     <view class="nav-inner" style="min-height: {{capsuleHeight}}px;">
       <view class="brand">SemiParty</view>
-      <view class="nav-right" bindtap="goSettings">⚙️</view>
+      <view class="nav-right" bindtap="goSettings">⚙</view>
     </view>
   </view>
 
-  <view class="profile-card">
-    <view class="card-bg"></view>
+  <view class="profile-card card">
     <view class="card-content">
-      <view class="avatar-wrap">
-        <view class="avatar">{{profile.avatarText || (profile.nickname ? profile.nickname.slice(0, 1) : 'U')}}</view>
-      </view>
+      <view class="avatar profile-avatar">{{profile.avatarText || (profile.nickname ? profile.nickname.slice(0, 1) : "U")}}</view>
       <view class="profile-name">{{profile.nickname}}</view>
       <view class="profile-role">{{profile.role}} · {{profile.company}} · {{profile.experience}}</view>
-      <view class="profile-bio">{{profile.bio || '完善资料后，让同行更快认识你'}}</view>
+      <view class="profile-bio">{{profile.bio || "完善资料后，让同行更快认识你"}}</view>
       <view class="badge-row">
         <view wx:for="{{profile.badges}}" wx:key="id" class="badge-chip">
           <text>{{item.icon}}</text>
           <text>{{item.name}}</text>
         </view>
       </view>
-      <view class="edit-btn" bindtap="goEditProfile">编辑资料</view>
+      <view class="edit-btn btn btn-secondary-muted" bindtap="goEditProfile">编辑资料</view>
     </view>
   </view>
 
-  <view class="stat-row">
+  <view class="stat-row card">
     <view class="stat-item" data-tab="posts" bindtap="onStatTap">
       <view class="stat-num">{{formatCount(profile.stats.postCount)}}</view>
       <view class="stat-label">帖子</view>
@@ -48,8 +45,8 @@
     </view>
   </view>
 
-  <view class="content-section">
-    <view class="content-tabs">
+  <view class="content-section card">
+    <view class="content-tabs tabs">
       <view
         wx:for="{{contentTabs}}"
         wx:key="key"
@@ -69,13 +66,13 @@
             <text class="post-card-time">{{item.createdAtText || item.createdAt}}</text>
           </view>
           <view class="post-card-meta">
-            <text>{{item.topicName || item.zoneName}} · {{item.contentTypeLabel}}</text>
-            <text wx:if="{{item.isBest}}" class="best-badge">🏅 精华</text>
+            <text>{{item.topicName}} · {{item.contentTypeLabel}}</text>
+            <text wx:if="{{item.isBest}}" class="best-badge">精选</text>
           </view>
           <view class="post-card-stats">
-            <text>👍 {{item.likeCount}}</text>
-            <text>💬 {{item.commentCount}}</text>
-            <text>👀 {{item.viewCount}}</text>
+            <text>赞 {{item.likeCount}}</text>
+            <text>评 {{item.commentCount}}</text>
+            <text>阅 {{item.viewCount}}</text>
           </view>
         </view>
       </block>
@@ -86,13 +83,11 @@
       <block wx:for="{{myFavorites}}" wx:key="postId">
         <view class="fav-card" data-id="{{item.postId}}" bindtap="onPostTap">
           <view class="fav-title">{{item.title}}</view>
-          <view class="fav-meta">
-            <text>{{item.author.nickname}} · {{item.topicName || item.zoneName}}</text>
-          </view>
+          <view class="fav-meta">{{item.author.nickname}} · {{item.topicName}}</view>
           <view class="fav-stats">
-            <text>👍 {{item.likeCount}}</text>
-            <text>💬 {{item.commentCount}}</text>
-            <text>收藏于 {{item.savedAt}}</text>
+            <text>赞 {{item.likeCount}}</text>
+            <text>评 {{item.commentCount}}</text>
+            <text>{{item.savedAt}}</text>
           </view>
         </view>
       </block>
@@ -105,7 +100,7 @@
         <view class="history-card" data-id="{{item.postId}}" bindtap="onPostTap">
           <view class="history-title">{{item.title}}</view>
           <view class="history-meta">
-            <text>{{item.topicName || item.zoneName}}</text>
+            <text>{{item.topicName}}</text>
             <text class="history-time">{{item.viewedAt}}</text>
           </view>
         </view>
@@ -114,36 +109,28 @@
     </view>
   </view>
 
-  <view class="menu-section">
-    <view class="menu-card">
-      <view class="menu-row" bindtap="goFollowList" data-type="following">
-        <text class="menu-emoji">👥</text>
-        <text class="menu-text">关注/粉丝</text>
-        <text class="menu-arrow">></text>
-      </view>
-      <view class="menu-row" bindtap="handleMenuTap" data-name="我的草稿">
-        <text class="menu-emoji">📝</text>
-        <text class="menu-text">我的草稿</text>
-        <text class="menu-arrow">></text>
-      </view>
-      <view class="menu-row" bindtap="goSettings">
-        <text class="menu-emoji">🔔</text>
-        <text class="menu-text">消息设置</text>
-        <text class="menu-arrow">></text>
-      </view>
-      <view class="menu-row" bindtap="handleMenuTap" data-name="意见反馈">
-        <text class="menu-emoji">💬</text>
-        <text class="menu-text">意见反馈</text>
-        <text class="menu-arrow">></text>
-      </view>
-      <view class="menu-row" bindtap="handleMenuTap" data-name="关于我们">
-        <text class="menu-emoji">ℹ️</text>
-        <text class="menu-text">关于我们</text>
-        <text class="menu-arrow">></text>
-      </view>
+  <view class="menu-section card">
+    <view class="menu-row" bindtap="goFollowList" data-type="following">
+      <text class="menu-text">关注 / 粉丝</text>
+      <text class="menu-arrow">›</text>
     </view>
-    <view class="logout-card" bindtap="handleLogout">退出登录</view>
+    <view class="menu-row" bindtap="handleMenuTap" data-name="我的草稿">
+      <text class="menu-text">我的草稿</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="goSettings">
+      <text class="menu-text">消息与设置</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="handleMenuTap" data-name="意见反馈">
+      <text class="menu-text">意见反馈</text>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-row" bindtap="handleMenuTap" data-name="关于我们">
+      <text class="menu-text">关于我们</text>
+      <text class="menu-arrow">›</text>
+    </view>
   </view>
 
-  <view style="height: 120rpx;"></view>
+  <view class="logout-btn btn btn-secondary-muted" bindtap="handleLogout">退出登录</view>
 </view>

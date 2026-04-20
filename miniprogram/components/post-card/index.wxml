@@ -1,6 +1,6 @@
 <view class="post-card" bindtap="handleTap">
   <view class="post-head">
-    <view class="avatar-circle post-avatar" style="background: {{item.author.avatarBg}}; color: {{item.author.avatarColor}};">
+    <view class="avatar post-avatar">
       {{item.author.avatarText}}
     </view>
     <view class="post-author">
@@ -10,12 +10,12 @@
   </view>
 
   <view class="post-content">{{item.content}}</view>
-  <text class="tag tag-{{item.topic.type}}">{{item.topic.text}}</text>
+  <text wx:if="{{topicText}}" class="tag">{{topicText}}</text>
 
   <view class="post-actions">
-    <view class="post-action {{liked ? 'is-active' : ''}}" catchtap="handleLike">♡ {{likeCount}}</view>
-    <view class="post-action" catchtap="handleComment">◻ {{item.comments}}</view>
-    <view class="post-action" catchtap="handleShare">↗ 分享</view>
+    <view class="post-action {{liked ? 'is-active' : ''}}" catchtap="handleLike">赞 {{likeCount}}</view>
+    <view class="post-action" catchtap="handleComment">评 {{item.comments || item.commentCount || 0}}</view>
+    <view class="post-action" catchtap="handleShare">分享</view>
   </view>
   <view class="post-time">{{relativeTime}}</view>
 </view>

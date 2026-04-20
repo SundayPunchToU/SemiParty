@@ -1,188 +1,134 @@
-.top-safe {
-  margin-bottom: 12rpx;
+.home-shell {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 120rpx);
 }
 
-.page-title {
-  font-size: var(--font-xxl);
-  margin-bottom: 8rpx;
+.home-hero {
+  margin-bottom: 20rpx;
 }
 
-/* === STEP 1.3 修改开始：公告条 === */
-.notice-bar {
-  display: flex;
-  align-items: center;
-  height: 72rpx;
-  padding: 0 24rpx;
-  background: var(--color-bg-card);
-}
-.notice-icon { font-size: 28rpx; margin-right: 12rpx; flex-shrink: 0; }
-.notice-text { flex: 1; font-size: 24rpx; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.notice-close { flex-shrink: 0; font-size: 24rpx; color: var(--color-text-tertiary); padding: 8rpx; margin-left: 12rpx; }
-/* === STEP 1.3 修改结束 === */
-
-/* === STEP 1.3 修改开始：运营横幅轮播 === */
-.banner-swiper {
-  margin: 16rpx 16rpx 0;
-  height: 240rpx;
-  border-radius: 24rpx;
-  overflow: hidden;
-}
-.banner-slide {
-  width: 100%;
-  height: 240rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 24rpx;
-}
-.banner-text {
-  color: var(--color-text-primary);
-  font-size: var(--font-md);
+.home-title {
+  font-size: 44rpx;
   font-weight: 700;
+  color: var(--color-text-primary);
 }
-/* === STEP 1.3 修改结束 === */
 
-/* === STEP 1.3 修改开始：新快捷入口栏 === */
-.shortcut-row {
-  display: flex;
-  justify-content: space-around;
-  padding: 24rpx 0;
-}
-.shortcut-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8rpx;
-}
-.shortcut-icon {
-  width: 80rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-  text-align: center;
-  background: var(--color-primary-soft);
-  border-radius: 50%;
-  font-size: 36rpx;
-}
-.shortcut-label {
+.home-subtitle {
+  margin-top: 8rpx;
   font-size: 24rpx;
   color: var(--color-text-secondary);
 }
-/* === STEP 1.3 修改结束 === */
 
-.tab-scroll {
-  margin: 16rpx 0 16rpx;
-  white-space: nowrap;
-  border-bottom: 1rpx solid var(--color-divider);
-}
-
-.tab-row {
+.home-tabs {
   display: flex;
-  gap: 0;
+  gap: 12rpx;
+  margin: 24rpx 0 20rpx;
 }
 
-.tab-chip {
-  display: inline-flex;
+.home-tab {
+  min-width: 132rpx;
+  height: 68rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: var(--font-base);
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14rpx 28rpx;
-  border: none;
-  border-radius: 0;
-  border-bottom: 3rpx solid transparent;
-  color: var(--color-text-tertiary);
-  font-size: var(--font-base);
-  font-weight: 500;
 }
 
-.tab-chip.is-active {
-  background: none;
-  color: var(--color-text-primary);
-  font-weight: 700;
-  border-bottom-color: var(--color-primary);
+.home-tab.is-active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
-.news-stream {
-  margin-top: 8rpx;
+.home-section {
+  min-height: 480rpx;
 }
 
-/* === STEP 1.2 修改开始：Swiper 内容区样式 === */
-.content-swiper {
-  height: calc(100vh - 492rpx);
+.home-placeholder,
+.home-footer {
+  padding: 36rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
 }
 
-.swiper-item {
-  overflow-y: auto;
-  height: 100%;
-  padding-bottom: 60rpx;
-  box-sizing: border-box;
-}
-
-/* 空态样式 */
-.empty-state {
+.company-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-top: 180rpx;
+  gap: 18rpx;
 }
 
-.empty-icon {
-  font-size: 80rpx;
-  margin-bottom: 24rpx;
-}
-
-.empty-text {
-  font-size: var(--font-base);
-  color: var(--color-text-secondary);
-  margin-bottom: 40rpx;
-}
-
-.empty-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16rpx 48rpx;
-  background: var(--color-primary);
-  color: var(--color-primary-text);
-  font-size: var(--font-base);
-  font-weight: 500;
-  border-radius: 40rpx;
-}
-
-.tearoom-entry-header {
-  align-items: flex-start;
-  margin: 20rpx 16rpx 12rpx;
-}
-
-.tearoom-entry-btn {
-  flex-shrink: 0;
-  padding: 14rpx 28rpx;
-  border-radius: 999rpx;
-}
-
-
-/* 茶水间话题标签 */
-.tearoom-topic-row {
-  display: flex;
-  gap: 16rpx;
-  padding: 20rpx 0;
-  white-space: nowrap;
-}
-
-.tearoom-topic-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 10rpx 24rpx;
+.company-card {
+  padding: 28rpx;
+  border-radius: 24rpx;
   background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.company-card-top {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+}
+
+.company-logo {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 24rpx;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: 30rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.company-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.company-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.company-desc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
   color: var(--color-text-secondary);
-  font-size: var(--font-sm);
-  border-radius: 32rpx;
-  white-space: nowrap;
+  line-height: 1.5;
 }
 
-.tearoom-topic-chip.is-active {
-  background: var(--color-primary);
-  color: var(--color-primary-text);
+.company-arrow {
+  font-size: 40rpx;
+  color: var(--color-text-tertiary);
 }
 
-/* 茶水间浮动发帖按钮已移至底部导航栏中央 */
-/* === STEP 1.2 修改结束 === */
+.company-info {
+  margin-top: 18rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.company-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.company-tag {
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--color-bg-elevated);
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+}

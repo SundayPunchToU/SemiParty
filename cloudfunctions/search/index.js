@@ -1,8 +1,6 @@
 const cloud = require("wx-server-sdk");
 
-cloud.init({
-  env: cloud.DYNAMIC_CURRENT_ENV,
-});
+cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
 const db = cloud.database();
 
@@ -16,7 +14,7 @@ const SEARCH_CONFIG = {
   },
   post: {
     collection: "posts",
-    fields: ["content", "category", "topic"],
+    fields: ["content", "category", "topicName", "tags"],
   },
   job: {
     collection: "jobs",
@@ -32,12 +30,8 @@ function containsKeyword(record, keyword, fields) {
   const source = fields
     .map((field) => {
       const value = record[field];
-      if (Array.isArray(value)) {
-        return value.join(" ");
-      }
-      if (typeof value === "object" && value) {
-        return JSON.stringify(value);
-      }
+      if (Array.isArray(value)) return value.join(" ");
+      if (typeof value === "object" && value) return JSON.stringify(value);
       return value || "";
     })
     .join(" ")
@@ -48,12 +42,7 @@ function containsKeyword(record, keyword, fields) {
 
 async function scanCollectionForKeyword(type, keyword, page, options = {}) {
   const config = SEARCH_CONFIG[type];
-  if (!config) {
-    return {
-      data: [],
-      hasMore: false,
-    };
-  }
+  if (!config) return { data: [], hasMore: false };
 
   const requiredMatches = Math.max(1, page) * PAGE_SIZE;
   const maxMatches = options.maxMatches || requiredMatches;
@@ -63,12 +52,7 @@ async function scanCollectionForKeyword(type, keyword, page, options = {}) {
   let hasMoreSource = true;
 
   while (scanned < scanLimit && hasMoreSource && matched.length < maxMatches) {
-    const batch = await db
-      .collection(config.collection)
-      .skip(scanned)
-      .limit(CHUNK_SIZE)
-      .get();
-
+    const batch = await db.collection(config.collection).skip(scanned).limit(CHUNK_SIZE).get();
     const docs = batch.data || [];
     if (!docs.length) {
       hasMoreSource = false;
@@ -87,7 +71,6 @@ async function scanCollectionForKeyword(type, keyword, page, options = {}) {
 
   const start = (page - 1) * PAGE_SIZE;
   const end = start + PAGE_SIZE;
-
   return {
     data: matched.slice(start, end),
     hasMore: matched.length > end || (hasMoreSource && scanned < scanLimit),
@@ -109,11 +92,7 @@ exports.main = async (event) => {
 
   if (type === "news" || type === "post" || type === "job" || type === "talent") {
     const result = await scanCollectionForKeyword(type, keyword, page);
-    return {
-      success: true,
-      data: result.data,
-      hasMore: result.hasMore,
-    };
+    return { success: true, data: result.data, hasMore: result.hasMore };
   }
 
   const [news, post, job, talent] = await Promise.all([

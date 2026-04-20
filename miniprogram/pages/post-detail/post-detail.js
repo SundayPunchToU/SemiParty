@@ -1,48 +1,53 @@
 const api = require("../../utils/api");
-const { formatRelative, getNavMetrics, formatCount } = require("../../utils/util");
+const { formatRelative, getNavMetrics } = require("../../utils/util");
 const { mockComments, postAttachments } = require("../../mock/commentData");
 
 const CONTENT_TYPE_MAP = {
-  discuss:   { label: "讨论", bg: "#2196F3", color: "#FFFFFF" },
-  news:      { label: "资讯", bg: "#78909C", color: "#FFFFFF" },
-  qa:        { label: "问答", bg: "#4CAF50", color: "#FFFFFF" },
-  interview: { label: "面经", bg: "#FF9800", color: "#FFFFFF" },
-  paper:     { label: "论文", bg: "#9C27B0", color: "#FFFFFF" },
-  recruit:   { label: "招聘", bg: "#FFC107", color: "#333333" },
-  demand:    { label: "供需", bg: "#F44336", color: "#FFFFFF" },
-  chat:      { label: "闲聊", bg: "#8D6E63", color: "#FFFFFF" }
+  discuss: { label: "讨论", bg: "#2196F3", color: "#FFFFFF" },
+  news: { label: "资讯", bg: "#64748B", color: "#FFFFFF" },
+  qa: { label: "问答", bg: "#16A34A", color: "#FFFFFF" },
+  interview: { label: "面经", bg: "#F97316", color: "#FFFFFF" },
+  paper: { label: "论文", bg: "#8B5CF6", color: "#FFFFFF" },
+  recruit: { label: "招聘", bg: "#F59E0B", color: "#1F2937" },
+  demand: { label: "供需", bg: "#EF4444", color: "#FFFFFF" },
+  chat: { label: "茶水间", bg: "#8D6E63", color: "#FFFFFF" },
 };
 
 const FILE_ICON_MAP = {
-  pdf: "📄",
-  xlsx: "📊", xls: "📊", csv: "📊",
-  docx: "📝", doc: "📝",
-  pptx: "📙", ppt: "📙",
-  zip: "📦", rar: "📦",
-  jpg: "🖼️", jpeg: "🖼️", png: "🖼️", gif: "🖼️", webp: "🖼️"
+  pdf: "PDF",
+  xlsx: "XLS",
+  xls: "XLS",
+  csv: "CSV",
+  docx: "DOC",
+  doc: "DOC",
+  pptx: "PPT",
+  ppt: "PPT",
+  zip: "ZIP",
+  rar: "RAR",
+  jpg: "IMG",
+  jpeg: "IMG",
+  png: "IMG",
+  gif: "IMG",
+  webp: "IMG",
 };
 
-const relatedPosts = [
-  { id: "rel-1", title: "N+2 节点工艺方案对比分析", commentCount: 89, likeCount: 234 },
-  { id: "rel-2", title: "良率爬坡阶段的常见 killer defect 分析", commentCount: 56, likeCount: 178 },
-  { id: "rel-3", title: "良率掉了 5% 怎么快速排查？", commentCount: 34, likeCount: 112 },
-];
-
-function getFileIcon(fileType) {
-  if (!fileType) return "📎";
-  return FILE_ICON_MAP[fileType.toLowerCase()] || "📎";
+function clone(data) {
+  return JSON.parse(JSON.stringify(data));
 }
 
-function _deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
+function getFileIcon(fileType) {
+  if (!fileType) {
+    return "FILE";
+  }
+  return FILE_ICON_MAP[String(fileType).toLowerCase()] || "FILE";
 }
 
 function normalizeCommentAuthor(author = {}, anonymous = false) {
-  const nickname = author.nickname || author.name || (anonymous ? "匿名芯片人" : "芯社区用户");
+  const nickname = author.nickname || author.name || (anonymous ? "匿名用户" : "SemiParty 用户");
   return {
     userId: author.userId || author.uid || "",
     nickname,
-    avatarText: author.avatarText || String(nickname).slice(0, 1) || "U",
+    avatarText: author.avatarText || nickname.slice(0, 1) || "U",
     avatarBg: author.avatarBg || "#DCE8FF",
     avatarColor: author.avatarColor || "#165DC6",
     role: author.role || author.title || "",
@@ -85,30 +90,25 @@ Page({
     post: null,
     publishTime: "",
     focusComment: false,
-    zoneName: "芯社区",
-    zoneId: "",
+    topicName: "",
     typeLabel: "讨论",
     typeBg: "#2196F3",
     typeColor: "#FFFFFF",
     authorRole: "",
     authorExperience: "",
-    postZoneName: "",
+    postTopicName: "",
     viewCount: 0,
-    relatedPosts,
-    // 附件
+    relatedPosts: [],
     postAttachments: [],
-    // 评论系统
     commentList: [],
     commentSort: "latest",
     totalCommentCount: 0,
     expandedComments: {},
     expandedFloorContent: {},
-    // 底部输入栏
     inputExpanded: false,
     inputValue: "",
     replyTarget: null,
     isAnonymous: false,
-    // 帖子互动
     postLiked: false,
     postFavorited: false,
     authorFollowed: false,
@@ -122,73 +122,83 @@ Page({
   async onLoad(options) {
     this.setData({
       ...getNavMetrics(),
-      focusComment: options.focus === "comment"
+      focusComment: options.focus === "comment",
     });
 
     try {
       const loginResult = await api.login().catch(() => null);
       const currentOpenid = loginResult?.openid || getApp().globalData.openid || "";
       const post = await api.getPostDetail(options.id);
-      const ct = CONTENT_TYPE_MAP[post.contentType] || CONTENT_TYPE_MAP.discuss;
+      const contentType = CONTENT_TYPE_MAP[post.contentType] || CONTENT_TYPE_MAP.discuss;
       const author = post.author || {};
       const title = author.title || "";
-      const parts = title.split("·").map((s) => s.trim());
-      const role = parts[0] || author.role || "";
-      const experience = author.experience || "";
+      const parts = title.split("·").map((item) => item.trim()).filter(Boolean);
       this._postAuthorUserId = author.userId || author.uid || "";
-
-      const atts = (postAttachments || []).map((a) => ({
-        ...a,
-        icon: getFileIcon(a.fileType)
-      }));
-
-      const comments = _deepClone(mockComments).map((item, index) => normalizeCommentItem(item, index));
-      comments.forEach((c) => {
-        if (c.attachments && c.attachments.length) {
-          c.attachments = c.attachments.map((a) => ({ ...a, icon: getFileIcon(a.fileType) }));
-        }
-      });
 
       let postFavorited = false;
       try {
         const favoritesRes = await api.getFavorites({ type: "post", page: 1, pageSize: 100 });
         postFavorited = (favoritesRes.data || []).some((item) => item.targetId === post.id);
-      } catch (e) {}
+      } catch (error) {}
+
+      const attachmentList = (postAttachments || []).map((item) => ({
+        ...item,
+        icon: getFileIcon(item.fileType),
+      }));
 
       this.setData({
         post,
         publishTime: formatRelative(post.createdAt),
-        zoneName: post.zoneName || "芯社区",
-        zoneId: post.zoneId || "",
-        typeLabel: ct.label,
-        typeBg: ct.bg,
-        typeColor: ct.color,
-        authorRole: role,
-        authorExperience: experience,
-        postZoneName: post.zoneName || "",
+        topicName: post.topicName || post.zoneName || "",
+        typeLabel: contentType.label,
+        typeBg: contentType.bg,
+        typeColor: contentType.color,
+        authorRole: parts[0] || author.role || "",
+        authorExperience: author.experience || parts.slice(1).join(" · "),
+        postTopicName: post.topicName || post.zoneName || "",
         viewCount: post.views || post.viewCount || 0,
-        postAttachments: atts,
-        commentList: comments,
-        totalCommentCount: this._calcTotalCount(comments),
+        postAttachments: attachmentList,
         postLiked: currentOpenid ? (post.likedOpenids || []).includes(currentOpenid) : false,
         postFavorited,
         authorFollowed: !!(author.isFollowed || author.followed),
         isOwnPost: !!currentOpenid && currentOpenid === this._postAuthorUserId,
       });
 
-      this.loadComments(options.id);
+      await this.loadComments(post.id || post._id);
+      this.buildRelatedPosts();
     } catch (error) {
       console.error("load post detail failed", error);
       wx.showToast({ title: error.message || "帖子加载失败", icon: "none" });
     }
   },
 
-  _calcTotalCount(comments) {
-    let count = comments.length;
-    (comments || []).forEach(c => {
-      count += (c.replies && c.replies.length) || 0;
-    });
-    return count;
+  buildRelatedPosts() {
+    const post = this.data.post;
+    if (!post) {
+      return;
+    }
+    api
+      .getPostsByTopic({ topicId: post.topicId || "hot", page: 1, size: 4 })
+      .then((result) => {
+        const relatedPosts = (result.data || [])
+          .filter((item) => item.id !== post.id)
+          .slice(0, 3)
+          .map((item) => ({
+            id: item.id,
+            title: item.title || item.content,
+            commentCount: item.comments || item.commentCount || 0,
+            likeCount: item.likes || item.likeCount || 0,
+          }));
+        this.setData({ relatedPosts });
+      })
+      .catch(() => {});
+  },
+
+  calcTotalCount(comments) {
+    return (comments || []).reduce(
+      (sum, item) => sum + 1 + ((item.replies && item.replies.length) || 0),
+      0
+    );
   },
 
   async loadComments(postId) {
@@ -200,49 +210,61 @@ Page({
         page: 1,
       });
       const remoteComments = (result.data || []).map((item, index) => normalizeCommentItem(item, index));
-      if (!remoteComments.length) {
+      if (remoteComments.length) {
+        this.setData({
+          commentList: remoteComments,
+          totalCommentCount: this.calcTotalCount(remoteComments),
+        });
         return;
       }
-      this.setData({
-        commentList: remoteComments,
-        totalCommentCount: this._calcTotalCount(remoteComments),
-      });
-    } catch (e) {
-      console.warn("loadComments fallback", e);
+    } catch (error) {
+      console.warn("loadComments fallback", error);
     }
+
+    const comments = clone(mockComments).map((item, index) => normalizeCommentItem(item, index));
+    comments.forEach((item) => {
+      item.attachments = (item.attachments || []).map((attachment) => ({
+        ...attachment,
+        icon: getFileIcon(attachment.fileType),
+      }));
+    });
+    this.setData({
+      commentList: comments,
+      totalCommentCount: this.calcTotalCount(comments),
+    });
   },
 
   goBack() {
     wx.navigateBack({
-      fail() { wx.switchTab({ url: "/pages/community/community" }); }
+      fail() {
+        wx.switchTab({ url: "/pages/community/community" });
+      },
     });
   },
 
-  onZoneTap() {
-    if (!this.data.zoneId) {
+  onTopicTap() {
+    if (!this.data.topicName) {
       return;
     }
-    wx.navigateTo({ url: `/pages/zone-detail/zone-detail?zoneId=${this.data.zoneId}` });
+    wx.navigateTo({
+      url: `/pages/search/search?keyword=${encodeURIComponent(this.data.topicName)}`,
+    });
   },
 
-  onRelatedPostTap(e) {
-    const id = e.currentTarget.dataset.id;
+  onRelatedPostTap(event) {
+    const id = event.currentTarget.dataset.id;
     if (!id) {
       return;
     }
     wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${id}` });
   },
 
-  // ===== 附件下载 =====
-  onDownloadAttachment(e) {
-    const fileId = e.currentTarget.dataset.fileid;
-    console.log("下载附件", fileId);
+  onDownloadAttachment() {
     wx.showToast({ title: "当前版本暂不支持附件下载", icon: "none" });
   },
 
-  // ===== 图片预览 =====
-  onPreviewImage(e) {
-    const { url } = e.currentTarget.dataset;
+  onPreviewImage(event) {
+    const url = event.currentTarget.dataset.url;
     const urls = (this.data.post && this.data.post.images) || [];
     if (!url || !urls.length) {
       return;
@@ -250,127 +272,148 @@ Page({
     wx.previewImage({ current: url, urls });
   },
 
-  // ===== 评论排序 =====
-  onSortChange(e) {
-    const sort = e.currentTarget.dataset.sort;
-    if (sort === this.data.commentSort) return;
+  onSortChange(event) {
+    const sort = event.currentTarget.dataset.sort;
+    if (!sort || sort === this.data.commentSort) {
+      return;
+    }
     this.setData({ commentSort: sort });
     if (this.data.post && (this.data.post.id || this.data.post._id)) {
       this.loadComments(this.data.post.id || this.data.post._id);
+    }
+  },
+
+  toggleFloorContent(event) {
+    const floor = event.currentTarget.dataset.floor;
+    this.setData({
+      [`expandedFloorContent.${floor}`]: !this.data.expandedFloorContent[floor],
+    });
+  },
+
+  toggleReplies(event) {
+    const floor = event.currentTarget.dataset.floor;
+    this.setData({
+      [`expandedComments.${floor}`]: !this.data.expandedComments[floor],
+    });
+  },
+
+  onLikeComment(event) {
+    const idx = event.currentTarget.dataset.idx;
+    const item = this.data.commentList[idx];
+    if (!item) {
       return;
     }
-    const list = sort === "hottest"
-      ? [...this.data.commentList].sort((a, b) => b.likeCount - a.likeCount)
-      : [...this.data.commentList].sort((a, b) => a.floor - b.floor);
-    this.setData({ commentList: list });
-  },
-
-  // ===== 评论展开/折叠（内容 > 6行） =====
-  toggleFloorContent(e) {
-    const floor = e.currentTarget.dataset.floor;
-    const key = "expandedFloorContent." + floor;
-    this.setData({ [key]: !this.data.expandedFloorContent[floor] });
-  },
-
-  // ===== 楼中楼展开/折叠 =====
-  toggleReplies(e) {
-    const floor = e.currentTarget.dataset.floor;
-    const key = "expandedComments." + floor;
-    this.setData({ [key]: !this.data.expandedComments[floor] });
-  },
-
-  // ===== 主楼点赞 =====
-  onLikeComment(e) {
-    const idx = e.currentTarget.dataset.idx;
-    const key = "commentList[" + idx + "]";
-    const c = this.data.commentList[idx];
-    const liked = !c.isLiked;
-    const count = liked ? c.likeCount + 1 : c.likeCount - 1;
+    const liked = !item.isLiked;
     this.setData({
-      [key + ".isLiked"]: liked,
-      [key + ".likeCount"]: count
+      [`commentList[${idx}].isLiked`]: liked,
+      [`commentList[${idx}].likeCount`]: Math.max(0, item.likeCount + (liked ? 1 : -1)),
     });
   },
 
-  // ===== 楼中楼点赞 =====
-  onLikeReply(e) {
-    const { cidx, ridx } = e.currentTarget.dataset;
-    const rKey = "commentList[" + cidx + "].replies[" + ridx + "]";
-    const r = this.data.commentList[cidx].replies[ridx];
-    const liked = !r.isLiked;
+  onLikeReply(event) {
+    const cidx = event.currentTarget.dataset.cidx;
+    const ridx = event.currentTarget.dataset.ridx;
+    const reply = this.data.commentList[cidx]?.replies?.[ridx];
+    if (!reply) {
+      return;
+    }
+    const liked = !reply.isLiked;
     this.setData({
-      [rKey + ".isLiked"]: liked,
-      [rKey + ".likeCount"]: liked ? r.likeCount + 1 : r.likeCount - 1
+      [`commentList[${cidx}].replies[${ridx}].isLiked`]: liked,
+      [`commentList[${cidx}].replies[${ridx}].likeCount`]: Math.max(0, reply.likeCount + (liked ? 1 : -1)),
     });
   },
 
-  // ===== 回复评论（主楼或楼中楼） =====
-  onReplyTo(e) {
-    const { nickname, commentid, replyid } = e.currentTarget.dataset;
+  onReplyTo(event) {
+    const nickname = event.currentTarget.dataset.nickname;
+    const commentId = event.currentTarget.dataset.commentid;
+    const replyId = event.currentTarget.dataset.replyid || null;
     this.setData({
       inputExpanded: true,
-      replyTarget: { nickname, commentId: commentid, replyId: replyid || null },
-      inputValue: ""
+      replyTarget: { nickname, commentId, replyId },
+      inputValue: "",
     });
   },
 
-  // ===== 长按主楼评论 =====
-  onLongPressComment(e) {
-    const { commentid } = e.currentTarget.dataset;
-    wx.showActionSheet({
-      itemList: ["💬 回复", "📋 复制文字", "⚠️ 举报"],
-      success: (res) => {
-        const idx = this.data.commentList.findIndex(c => c.commentId === commentid);
-        if (idx === -1) return;
-        const c = this.data.commentList[idx];
-        if (res.tapIndex === 0) {
-          this.setData({ inputExpanded: true, replyTarget: { nickname: c.author.nickname, commentId: c.commentId, replyId: null } });
-        } else if (res.tapIndex === 1) {
-          wx.setClipboardData({ data: c.content });
-        } else if (res.tapIndex === 2) {
-          console.log("举报评论", commentid);
-        }
-      }
-    });
-  },
-
-  // ===== 长按楼中楼回复 =====
-  onLongPressReply(e) {
-    const { cidx, ridx } = e.currentTarget.dataset;
-    const reply = this.data.commentList[cidx].replies[ridx];
+  onTapReplyItem(event) {
+    const cidx = event.currentTarget.dataset.cidx;
+    const ridx = event.currentTarget.dataset.ridx;
+    const reply = this.data.commentList[cidx]?.replies?.[ridx];
     const comment = this.data.commentList[cidx];
+    if (!reply || !comment) {
+      return;
+    }
+    this.setData({
+      inputExpanded: true,
+      replyTarget: { nickname: reply.author.nickname, commentId: comment.commentId, replyId: reply.replyId },
+      inputValue: "",
+    });
+  },
+
+  onLongPressComment(event) {
+    const commentId = event.currentTarget.dataset.commentid;
+    const comment = this.data.commentList.find((item) => item.commentId === commentId);
+    if (!comment) {
+      return;
+    }
     wx.showActionSheet({
       itemList: ["回复", "复制文字", "举报"],
-      success: (res) => {
-        if (res.tapIndex === 0) {
+      success: (result) => {
+        if (result.tapIndex === 0) {
           this.setData({
             inputExpanded: true,
-            replyTarget: { nickname: reply.author.nickname, commentId: comment.commentId, replyId: reply.replyId }
+            replyTarget: { nickname: comment.author.nickname, commentId: comment.commentId, replyId: null },
           });
-        } else if (res.tapIndex === 1) {
-          wx.setClipboardData({ data: reply.content });
-        } else if (res.tapIndex === 2) {
-          console.log("举报回复", reply.replyId);
+        } else if (result.tapIndex === 1) {
+          wx.setClipboardData({ data: comment.content });
+        } else {
+          wx.showToast({ title: "举报入口后续开放", icon: "none" });
         }
-      }
+      },
     });
   },
 
-  // ===== 底部输入栏 =====
+  onLongPressReply(event) {
+    const cidx = event.currentTarget.dataset.cidx;
+    const ridx = event.currentTarget.dataset.ridx;
+    const reply = this.data.commentList[cidx]?.replies?.[ridx];
+    const comment = this.data.commentList[cidx];
+    if (!reply || !comment) {
+      return;
+    }
+    wx.showActionSheet({
+      itemList: ["回复", "复制文字", "举报"],
+      success: (result) => {
+        if (result.tapIndex === 0) {
+          this.setData({
+            inputExpanded: true,
+            replyTarget: { nickname: reply.author.nickname, commentId: comment.commentId, replyId: reply.replyId },
+          });
+        } else if (result.tapIndex === 1) {
+          wx.setClipboardData({ data: reply.content });
+        } else {
+          wx.showToast({ title: "举报入口后续开放", icon: "none" });
+        }
+      },
+    });
+  },
+
   onInputFocus() {
-    this.setData({ inputExpanded: true, inputValue: "" });
+    this.setData({ inputExpanded: true });
   },
 
-  onInputBlur() {
-    // 不自动收起，让用户手动取消
-  },
+  onInputBlur() {},
 
-  onInputChange(e) {
-    this.setData({ inputValue: e.detail.value });
+  onInputChange(event) {
+    this.setData({ inputValue: event.detail.value });
   },
 
   onCancelInput() {
-    this.setData({ inputExpanded: false, inputValue: "", replyTarget: null });
+    this.setData({
+      inputExpanded: false,
+      inputValue: "",
+      replyTarget: null,
+    });
   },
 
   toggleAnonymous() {
@@ -378,10 +421,10 @@ Page({
   },
 
   async onPublishComment() {
-    const { inputValue, replyTarget, post, commentSubmitting } = this.data;
-    const content = (inputValue || "").trim();
-    const postId = (post && (post.id || post._id)) || "";
-    if (!content || !postId || commentSubmitting) {
+    const post = this.data.post;
+    const content = (this.data.inputValue || "").trim();
+    const postId = post && (post.id || post._id);
+    if (!content || !postId || this.data.commentSubmitting) {
       return;
     }
 
@@ -392,32 +435,27 @@ Page({
         targetType: "post",
         targetId: postId,
         content,
-        parentId: replyTarget ? replyTarget.commentId || "" : "",
-        replyTo: replyTarget && replyTarget.replyId ? replyTarget.replyId : "",
+        parentId: this.data.replyTarget ? this.data.replyTarget.commentId || "" : "",
+        replyTo: this.data.replyTarget && this.data.replyTarget.replyId ? this.data.replyTarget.replyId : "",
       });
-
       await this.loadComments(postId);
       this.setData({
         inputExpanded: false,
         inputValue: "",
         replyTarget: null,
-        "post.comments": Number((this.data.post && this.data.post.comments) || 0) + 1,
       });
       wx.showToast({ title: "评论成功", icon: "success" });
     } catch (error) {
       console.error("publish comment failed", error);
-      wx.showToast({
-        title: error.message === "user not found" ? "请先初始化当前用户资料" : (error.message || "评论失败，请稍后重试"),
-        icon: "none"
-      });
+      wx.showToast({ title: error.message || "评论失败", icon: "none" });
     } finally {
       this.setData({ commentSubmitting: false });
     }
   },
 
-  // ===== 帖子点赞/收藏 =====
   async togglePostLike() {
-    const postId = this.data.post && (this.data.post.id || this.data.post._id);
+    const post = this.data.post;
+    const postId = post && (post.id || post._id);
     if (!postId || this.data.postActionLoading) {
       return;
     }
@@ -425,14 +463,12 @@ Page({
     try {
       await api.login();
       const result = await api.toggleLike("post", postId);
-      const liked = !!result.liked;
-      const likes = Number(result.likes ?? this.data.post.likes ?? 0) || 0;
       this.setData({
-        postLiked: liked,
-        "post.likes": likes,
+        postLiked: !!result.liked,
+        "post.likes": Number(result.likes ?? post.likes ?? 0) || 0,
       });
     } catch (error) {
-      wx.showToast({ title: error.message || "点赞失败，请稍后重试", icon: "none" });
+      wx.showToast({ title: error.message || "点赞失败", icon: "none" });
     } finally {
       this.setData({ postActionLoading: false });
     }
@@ -449,15 +485,32 @@ Page({
       await api.login();
       const result = await api.toggleFavorite("post", postId, {
         title: post.title || (post.content || "").slice(0, 40),
-        authorName: post.author?.name || "芯社区用户",
-        zoneName: this.data.zoneName || post.zoneName || "",
+        authorName: post.author?.name || "SemiParty 用户",
+        topicName: this.data.topicName || post.topicName || post.zoneName || "",
         likes: Number(post.likes || 0) || 0,
         comments: Number(post.comments || 0) || 0,
       });
       this.setData({ postFavorited: !!result.favorited });
       wx.showToast({ title: result.favorited ? "已收藏" : "已取消收藏", icon: "none" });
     } catch (error) {
-      wx.showToast({ title: error.message || "收藏失败，请稍后重试", icon: "none" });
+      wx.showToast({ title: error.message || "收藏失败", icon: "none" });
+    } finally {
+      this.setData({ postActionLoading: false });
+    }
+  },
+
+  async onToggleFollow() {
+    if (this.data.isOwnPost || !this._postAuthorUserId || this.data.postActionLoading) {
+      return;
+    }
+    this.setData({ postActionLoading: true });
+    try {
+      await api.login();
+      const result = await api.toggleFollow(this._postAuthorUserId);
+      this.setData({ authorFollowed: !!result.followed });
+      wx.showToast({ title: result.followed ? "已关注" : "已取消关注", icon: "none" });
+    } catch (error) {
+      wx.showToast({ title: error.message || "关注失败", icon: "none" });
     } finally {
       this.setData({ postActionLoading: false });
     }
@@ -471,14 +524,13 @@ Page({
   onMoreTap() {
     wx.showActionSheet({
       itemList: ["复制帖子内容", "举报内容"],
-      success: (res) => {
-        if (res.tapIndex === 0) {
+      success: (result) => {
+        if (result.tapIndex === 0) {
           wx.setClipboardData({ data: this.data.post?.content || "" });
+        } else {
+          wx.showToast({ title: "举报入口后续开放", icon: "none" });
         }
-        if (res.tapIndex === 1) {
-          wx.showToast({ title: "举报入口将在后续版本开放", icon: "none" });
-        }
-      }
+      },
     });
   },
 
@@ -486,8 +538,9 @@ Page({
     wx.showToast({ title: "当前已加载最新评论", icon: "none" });
   },
 
-  onCommentImageTap(e) {
-    const { url, commentIndex } = e.currentTarget.dataset;
+  onCommentImageTap(event) {
+    const url = event.currentTarget.dataset.url;
+    const commentIndex = event.currentTarget.dataset.commentIndex;
     const comment = this.data.commentList[commentIndex] || {};
     const urls = Array.isArray(comment.images) ? comment.images : [];
     if (!url || !urls.length) {
@@ -496,32 +549,14 @@ Page({
     wx.previewImage({ current: url, urls });
   },
 
-
-  async onToggleFollow() {
-    if (this.data.isOwnPost || !this._postAuthorUserId || this.data.postActionLoading) {
-      return;
-    }
-    this.setData({ postActionLoading: true });
-    try {
-      await api.login();
-      const result = await api.toggleFollow(this._postAuthorUserId);
-      this.setData({ authorFollowed: !!result.followed });
-      wx.showToast({ title: result.followed ? "已关注" : "已取消关注", icon: "none" });
-    } catch (error) {
-      wx.showToast({ title: error.message || "关注失败，请稍后重试", icon: "none" });
-    } finally {
-      this.setData({ postActionLoading: false });
-    }
-  },
-
   onToolbarDisabledTap() {
-    wx.showToast({ title: "当前版本暂不支持图片/附件评论", icon: "none" });
+    wx.showToast({ title: "当前版本暂不支持图片或附件评论", icon: "none" });
   },
 
   onShareAppMessage() {
     const post = this.data.post || {};
     return {
-      title: post.title || (post.content || "半导体社区讨论").slice(0, 28),
+      title: post.title || (post.content || "SemiParty 社区讨论").slice(0, 28),
       path: `/pages/post-detail/post-detail?id=${post.id || post._id || ""}`,
     };
   },
@@ -529,19 +564,8 @@ Page({
   onShareTimeline() {
     const post = this.data.post || {};
     return {
-      title: post.title || (post.content || "半导体社区讨论").slice(0, 28),
+      title: post.title || (post.content || "SemiParty 社区讨论").slice(0, 28),
       query: `id=${post.id || post._id || ""}`,
     };
   },
-
-  // 点击楼中楼整条 → 回复此人
-  onTapReplyItem(e) {
-    const { cidx, ridx } = e.currentTarget.dataset;
-    const reply = this.data.commentList[cidx].replies[ridx];
-    this.setData({
-      inputExpanded: true,
-      replyTarget: { nickname: reply.author.nickname, commentId: this.data.commentList[cidx].commentId, replyId: reply.replyId },
-      inputValue: "回复 " + reply.author.nickname + "："
-    });
-  }
 });

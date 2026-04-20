@@ -67,7 +67,7 @@
   width: 160rpx;
   height: 160rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary), #5b9cff);
+  background: var(--color-primary);
   color: #fff;
   font-size: 64rpx;
   font-weight: 700;

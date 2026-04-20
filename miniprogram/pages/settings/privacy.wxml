@@ -1,5 +1,5 @@
 <view class="page-sub">
-  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px;">
+  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
     <view class="nav-inner">
       <view class="back-btn" bindtap="goBack">‹</view>
       <view class="nav-title">隐私设置</view>
@@ -21,11 +21,11 @@
       <switch checked="{{items.allowRecommend}}" color="#2A7FFF" data-key="allowRecommend" bindchange="onToggle" />
     </view>
     <view class="card-row">
-      <text class="row-text">匿名帖子默认开启</text>
+      <text class="row-text">匿名发帖默认开启</text>
       <switch checked="{{items.anonymousDefault}}" color="#2A7FFF" data-key="anonymousDefault" bindchange="onToggle" />
     </view>
     <view class="card-row">
-      <text class="row-text">浏览历史可被他人看到</text>
+      <text class="row-text">允许他人查看浏览历史</text>
       <switch checked="{{items.historyVisible}}" color="#2A7FFF" data-key="historyVisible" bindchange="onToggle" />
     </view>
   </view>

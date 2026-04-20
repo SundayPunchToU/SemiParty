@@ -1,5 +1,5 @@
 <view class="page-sub">
-  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px;">
+  <view class="top-nav" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
     <view class="nav-inner">
       <view class="back-btn" bindtap="goBack">‹</view>
       <view class="nav-title">通知设置</view>
@@ -7,7 +7,6 @@
     </view>
   </view>
 
-  <!-- 互动通知 -->
   <view class="section-label">互动通知</view>
   <view class="card-group">
     <view class="card-row">
@@ -19,7 +18,7 @@
       <switch checked="{{items.like}}" color="#2A7FFF" data-key="like" bindchange="onToggle" />
     </view>
     <view class="card-row">
-      <text class="row-text">@提到我</text>
+      <text class="row-text">@ 提到我</text>
       <switch checked="{{items.mention}}" color="#2A7FFF" data-key="mention" bindchange="onToggle" />
     </view>
     <view class="card-row">
@@ -28,7 +27,6 @@
     </view>
   </view>
 
-  <!-- 消息通知 -->
   <view class="section-label">消息通知</view>
   <view class="card-group">
     <view class="card-row">
@@ -36,16 +34,11 @@
       <switch checked="{{items.privateMsg}}" color="#2A7FFF" data-key="privateMsg" bindchange="onToggle" />
     </view>
     <view class="card-row">
-      <text class="row-text">群组消息</text>
-      <switch checked="{{items.groupMsg}}" color="#2A7FFF" data-key="groupMsg" bindchange="onToggle" />
-    </view>
-    <view class="card-row">
       <text class="row-text">系统通知</text>
       <switch checked="{{items.system}}" color="#2A7FFF" data-key="system" bindchange="onToggle" />
     </view>
   </view>
 
-  <!-- 免打扰 -->
   <view class="section-label">免打扰时段</view>
   <view class="card-group">
     <view class="card-row">

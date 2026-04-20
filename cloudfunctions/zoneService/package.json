@@ -1,7 +1,7 @@
 {
   "name": "zoneService",
   "version": "1.0.0",
-  "description": "SemiParty zone service - categories, CRUD, join/leave, recommend",
+  "description": "SemiParty tea room topic service",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~2.6.3"

@@ -1,137 +1,51 @@
 <view class="page-shell community-shell">
-  <!-- === STEP 1.5 修改开始：模块 A 顶部栏 === -->
   <view class="top-safe" style="padding-top: {{statusBarHeight + 8}}px; padding-right: {{navCapsuleInsetRight}}px;">
     <view class="community-topbar" style="min-height: {{capsuleHeight}}px;">
-      <view class="community-title">社区</view>
-      <view class="search-icon" bindtap="onSearchTap">
-        <text class="search-icon-text">🔍</text>
+      <view>
+        <view class="community-title">社区</view>
+        <view class="community-subtitle">唯一茶水间</view>
       </view>
+      <view class="community-action" bindtap="handleCreatePost">发帖</view>
     </view>
   </view>
-  <!-- === STEP 1.5 修改结束 === -->
 
-  <!-- === STEP 1.5 修改开始：模块 B 晶圆茶水间入口卡片 === -->
-  <view class="tea-room-card" bindtap="goToTeaRoom">
-    <view class="tea-room-left">
-      <view class="tea-room-name">☕ 晶圆茶水间</view>
-      <view class="tea-room-desc">半导体人的深夜食堂</view>
-      <view class="tea-room-stats">🟢 {{teaRoomOnlineCount}} 人在线 · 今日 {{teaRoomTodayPosts}} 帖</view>
-    </view>
-    <view class="tea-room-arrow">›</view>
+  <view class="community-search" bindtap="onSearchTap">
+    <text class="community-search-icon">⌕</text>
+    <text class="community-search-text">搜索帖子、话题、岗位、资讯</text>
   </view>
-  <!-- === STEP 1.5 修改结束 === -->
 
-  <!-- === STEP 1.5 修改开始：模块 C 我的专区（横向滑动） === -->
-  <view class="my-zones-section">
-    <view class="section-header">
-      <view class="section-title">我的专区</view>
-      <view class="section-more" bindtap="onViewAllZones">全部 ></view>
-    </view>
-    <block wx:if="{{hasMyZones}}">
-      <scroll-view class="my-zones-scroll" scroll-x="true" enable-flex="true" show-scrollbar="{{false}}">
-        <view class="my-zones-row">
-          <view
-            wx:for="{{myZones}}"
-            wx:key="zoneId"
-            class="my-zone-card"
-            data-zoneid="{{item.zoneId}}"
-            bindtap="onZoneTap"
-          >
-            <view class="my-zone-name">{{item.zoneName}}</view>
-            <view wx:if="{{item.hasNew}}" class="my-zone-dot"></view>
-          </view>
-        </view>
-      </scroll-view>
-    </block>
-    <block wx:else>
-      <view class="my-zones-empty">
-        <view class="empty-text">加入专区，找到你的圈子</view>
-        <view class="empty-action" bindtap="onGoDiscover">去看看 →</view>
-      </view>
-    </block>
+  <view class="tea-room-summary">
+    <view class="tea-room-summary-title">晶圆茶水间</view>
+    <view class="tea-room-summary-text">{{onlineCount}} 人在线 · 今日 {{todayPostCount}} 帖</view>
   </view>
-  <!-- === STEP 1.5 修改结束 === -->
 
-  <!-- === STEP 1.5 修改开始：模块 D 专区分类导航 === -->
-  <view class="zone-section">
-    <scroll-view class="category-chips-scroll" scroll-x="true" enable-flex="true" show-scrollbar="{{false}}">
-      <view class="category-chips-row">
-        <view
-          wx:for="{{zoneCategories}}"
-          wx:key="key"
-          class="zone-category-chip {{activeCategory === item.key ? 'is-active' : ''}}"
-          data-key="{{item.key}}"
-          bindtap="onCategoryTap"
-        >
-          {{item.name}}
-        </view>
-      </view>
-    </scroll-view>
-
-    <view wx:if="{{zoneListLoading}}" class="zone-list-loading">加载中...</view>
-    <view wx:elif="{{currentZoneList.length === 0}}" class="zone-list-loading">暂无专区</view>
-    <view wx:else class="zone-list">
+  <scroll-view class="topic-scroll" scroll-x="true" enable-flex="true" show-scrollbar="{{false}}">
+    <view class="topic-row">
       <view
-        wx:for="{{currentZoneList}}"
-        wx:key="zoneId"
-        class="zone-item"
-        data-zoneid="{{item.zoneId}}"
-        bindtap="onZoneTap"
+        wx:for="{{topics}}"
+        wx:key="topicId"
+        class="topic-chip {{activeTopicId === item.topicId ? 'is-active' : ''}}"
+        data-topicid="{{item.topicId}}"
+        bindtap="onTopicTap"
       >
-        <view class="zone-icon">{{item.zoneName[0]}}</view>
-        <view class="zone-info">
-          <view class="zone-name">{{item.zoneName}}</view>
-          <view class="zone-meta">{{item.memberCount}} 成员 · 今日 {{item.todayPosts}} 帖</view>
-        </view>
-        <view
-          wx:if="{{item.isJoined}}"
-          class="zone-btn zone-btn-joined"
-          data-zoneid="{{item.zoneId}}"
-          catchtap="onJoinToggle"
-        >已加入 ✓</view>
-        <view
-          wx:else
-          class="zone-btn zone-btn-join"
-          data-zoneid="{{item.zoneId}}"
-          catchtap="onJoinToggle"
-        >+ 加入</view>
+        {{item.topicName}}
       </view>
     </view>
+  </scroll-view>
+
+  <view wx:if="{{loading && !posts.length}}" class="community-placeholder">加载中...</view>
+  <view wx:elif="{{!posts.length}}" class="community-placeholder">还没有帖子，去发第一条吧</view>
+
+  <view wx:else class="community-feed">
+    <post-card
+      wx:for="{{posts}}"
+      wx:key="id"
+      item="{{item}}"
+      bind:cardtap="openPostDetail"
+      bind:comment="openComment"
+      bind:like="handleLike"
+      bind:share="handleShare"
+    />
+    <view class="community-footer">{{hasMore ? (loadingMore ? '加载中...' : '') : '没有更多帖子了'}}</view>
   </view>
-
-  <view class="community-feed-section">
-    <view class="section-header">
-      <view class="section-title">社区热议</view>
-      <view class="section-more" bindtap="handleCreatePost">发帖 ></view>
-    </view>
-
-    <view wx:if="{{postLoading && posts.length === 0}}" class="feed-loading">帖子加载中...</view>
-    <view wx:elif="{{posts.length === 0}}" class="feed-loading">暂无帖子，去发第一条吧</view>
-    <view wx:else class="community-feed-list">
-      <block wx:for="{{posts}}" wx:key="id">
-        <post-card
-          item="{{item}}"
-          bind:cardtap="openPostDetail"
-          bind:comment="openComment"
-          bind:like="handleLike"
-          bind:share="handleShare"
-        />
-      </block>
-      <view class="feed-footer">{{hasMore ? (loadingMore ? '加载中...' : '') : '没有更多帖子了'}}</view>
-    </view>
-  </view>
-
-  <!-- === STEP 1.5 修改结束 === -->
-
-  <!-- === Step 2.5 增强：创建专区入口 === -->
-  <view class="create-zone-entry">
-    <view class="create-zone-title">没找到你的圈子？</view>
-    <view class="create-zone-card" bindtap="onCreateZone">
-      <view class="create-zone-card-title">申请创建专区</view>
-      <view class="create-zone-card-desc">当前版本先采用人工审核受理，避免无效专区泛滥</view>
-    </view>
-  </view>
-  <!-- === Step 2.5 增强结束 === -->
-
-  <!-- 浮动发帖按钮已移至底部导航栏中央 -->
 </view>

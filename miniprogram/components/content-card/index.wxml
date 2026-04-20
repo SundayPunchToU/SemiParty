@@ -1,15 +1,10 @@
-<!-- === STEP 1.4 新增：ContentCard 模板 === -->
 <view class="content-card" bindtap="handleTap">
-  <!-- A区：来源标签行 -->
   <view class="card-tag-row">
-    <text wx:if="{{showZoneName && item.zoneName}}" class="zone-name">{{item.zoneName}}</text>
-    <text wx:if="{{showZoneName && item.zoneName && showContentType}}" class="tag-sep">·</text>
     <view wx:if="{{showContentType && item.contentType}}" class="type-chip" style="background: {{typeBg}}; color: {{typeColor}};">
       {{typeLabel}}
     </view>
   </view>
 
-  <!-- B区：作者信息行 -->
   <view class="card-author-row">
     <view class="author-avatar" style="background: {{avatarBg}}; color: {{avatarColor}};">{{avatarText}}</view>
     <text class="author-name">{{displayName}}</text>
@@ -17,25 +12,20 @@
     <text class="author-time">· {{relativeTime}}</text>
   </view>
 
-  <!-- C区：内容主体 -->
   <view class="card-body">
     <view class="card-title">{{item.title}}</view>
     <view class="card-summary">{{item.content}}</view>
     <view wx:if="{{showTopicTag && topicTagText}}" class="card-topic-tag">#{{topicTagText}}</view>
   </view>
 
-  <!-- D区：互动数据行 -->
   <view class="card-action-row">
     <view class="action-item">
-      <text class="action-icon">💬</text>
+      <text class="action-icon">评</text>
       <text class="action-num">{{commentCount}}</text>
     </view>
     <view class="action-item">
-      <text class="action-icon">👍</text>
+      <text class="action-icon">赞</text>
       <text class="action-num">{{likeCount}}</text>
-    </view>
-    <view class="action-item">
-      <text class="action-icon">🔖</text>
     </view>
   </view>
 </view>

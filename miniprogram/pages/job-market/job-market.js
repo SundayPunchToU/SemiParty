@@ -17,10 +17,13 @@ Page({
     contactingTalentId: ""
   },
 
-  async onLoad() {
+  async onLoad(options = {}) {
     this.setData({
       ...getNavMetrics()
     });
+    if (options.company) {
+      this.setData({ keyword: decodeURIComponent(options.company) });
+    }
     await Promise.all([this.loadJobs(), this.loadTalents()]);
   },
 

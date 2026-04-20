@@ -44,7 +44,7 @@
           bindtap="openResult"
         >
           <view class="result-main">{{entry.title || entry.content || entry.name}}</view>
-          <view class="result-sub">{{entry.company || entry.source || entry.school || entry.topic.text || entry.targetRole}}</view>
+          <view class="result-sub">{{entry.subtitle}}</view>
         </view>
       </view>
     </block>
@@ -67,7 +67,7 @@
       bindtap="openResult"
     >
       <view class="result-main">{{item.title || item.content || item.name}}</view>
-      <view class="result-sub">{{item.company || item.source || item.school || (item.topic && item.topic.text) || item.targetRole}}</view>
+      <view class="result-sub">{{item.subtitle}}</view>
     </view>
   </view>
 </view>

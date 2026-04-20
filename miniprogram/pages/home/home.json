@@ -2,8 +2,7 @@
   "enablePullDownRefresh": true,
   "usingComponents": {
     "search-bar": "/components/search-bar/index",
-    "quick-nav": "/components/quick-nav/index",
     "news-card": "/components/news-card/index",
-    "content-card": "/components/content-card/index"
+    "job-card": "/components/job-card/index"
   }
 }

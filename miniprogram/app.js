@@ -7,7 +7,6 @@ const MOCK_STATE_STORAGE_KEY = "semi_party_mock_state";
 function createDefaultUnreadSummary() {
   return {
     privateUnread: 0,
-    groupUnread: 0,
     totalUnread: 0,
     hasUnread: false,
   };
@@ -124,7 +123,7 @@ App({
     );
 
     this.globalData = {
-      brandName: "芯圈 SemiParty",
+      brandName: "SemiParty",
       cloudReady: false,
       cloudEnvId: "cloud1-5g7efswaf4780b4c",
       useMock: DEV_USE_MOCK,

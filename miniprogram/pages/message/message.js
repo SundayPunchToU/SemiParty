@@ -1,7 +1,7 @@
 const api = require("../../utils/api");
 const { messageTabs } = require("../../utils/constants");
 const { getNavMetrics } = require("../../utils/util");
-// === STEP 1.6 修改开始：引入互动 mock 数据 ===
+
 let interactionMock = {};
 try {
   interactionMock = require("../../utils/mock-interaction-data");
@@ -9,32 +9,22 @@ try {
   console.warn("mock interaction data unavailable", error);
 }
 
-const { interactionMessages = [] } = interactionMock;
-// === STEP 1.6 修改结束 ===
-// === STEP 1.6 增强 修改开始：引入私聊/群组/通知 mock 数据 ===
 const {
+  interactionMessages = [],
   privateChatList = [],
-  groupChatList = [],
   systemNotifications = [],
 } = interactionMock;
-// === STEP 1.6 增强 修改结束 ===
 
-// === STEP 1.6 增强 修改开始：通知类型图标映射 ===
-const notifTypeConfig = {
-  announcement: { emoji: "📢", bg: "#1E3A5F" },
-  zone: { emoji: "🏠", bg: "#1A5F3E" },
-  audit: { emoji: "✅", bg: "#5F4A1A" },
-  activity: { emoji: "🎉", bg: "#3E1A5F" },
-  system: { emoji: "⚙️", bg: "#3A3A3A" },
+const NOTIF_STYLE_MAP = {
+  announcement: { emoji: "公", bg: "#3B82F6" },
+  audit: { emoji: "审", bg: "#F59E0B" },
+  activity: { emoji: "活", bg: "#10B981" },
+  system: { emoji: "系", bg: "#6B7280" },
 };
-// === STEP 1.6 增强 修改结束 ===
 
-// === STEP 1.6 增强 II 修改开始：左滑按钮配置 ===
-// 3 按钮模式：标为已读/未读 + 置顶/取消 + 删除
-const BTN_W = 128; // 每个按钮 64dp = 128rpx
-const SWIPE_W_3 = BTN_W * 3; // 384rpx
-const SWIPE_W_2 = BTN_W * 2; // 256rpx
-// === STEP 1.6 增强 II 修改结束 ===
+const BTN_W = 128;
+const SWIPE_W_3 = BTN_W * 3;
+const SWIPE_W_2 = BTN_W * 2;
 
 function sortPinnedFirst(list = []) {
   return [...list].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
@@ -46,24 +36,8 @@ function mapPrivateChatItem(item = {}) {
     chatId: item.chatId || item.id || "",
     user: {
       nickname,
-      nickName: nickname,
       role: item.role || item.user?.role || "",
-      avatarText: item.avatarText || nickname.slice(0, 1) || "聊",
     },
-    lastMessage: item.lastMessage || "暂无消息",
-    lastMessageTime: item.time || item.lastMessageTime || "",
-    unreadCount: Number(item.unreadCount || item.unread || 0),
-    isPinned: Boolean(item.isPinned),
-  };
-}
-
-function mapGroupChatItem(item = {}) {
-  const groupName = item.name || item.groupName || "群聊";
-  return {
-    groupId: item.chatId || item.groupId || item.id || "",
-    groupName,
-    memberCount: Number(item.memberCount || (item.participantProfiles || []).length || 0),
-    lastSender: item.lastSender || "群成员",
     lastMessage: item.lastMessage || "暂无消息",
     lastMessageTime: item.time || item.lastMessageTime || "",
     unreadCount: Number(item.unreadCount || item.unread || 0),
@@ -73,13 +47,13 @@ function mapGroupChatItem(item = {}) {
 
 function mapNotificationItem(item = {}) {
   const type = item.type || "system";
-  const config = notifTypeConfig[type] || notifTypeConfig.system;
+  const config = NOTIF_STYLE_MAP[type] || NOTIF_STYLE_MAP.system;
   const unreadCount = Number(item.unreadCount || item.unread || 0);
   return {
     id: item.id || item.chatId || "",
     type,
     title: item.title || item.name || "系统通知",
-    content: item.content || item.lastMessage || "暂无通知内容",
+    content: item.content || item.lastMessage || "暂无通知",
     time: item.time || "",
     isRead: item.isRead !== undefined ? !!item.isRead : unreadCount === 0,
     typeEmoji: config.emoji,
@@ -90,449 +64,357 @@ function mapNotificationItem(item = {}) {
 Page({
   data: {
     statusBarHeight: 24,
-    brandName: "芯圈 SemiParty",
     tabs: messageTabs,
-    // === STEP 1.6 修改开始：默认选中互动 Tab ===
     activeTab: "interaction",
-    interactionList: interactionMessages,
-    // === STEP 1.6 修改结束 ===
-    // === STEP 1.6 增强 修改开始：私聊/群组/通知列表数据 ===
+    interactionList: [],
     privateList: [],
-    groupList: [],
     notificationList: [],
-    // === STEP 1.6 增强 修改结束 ===
-    // === STEP 1.6 增强 II 修改开始：左滑状态 ===
-    swipeOpenId: "",       // 当前展开左滑菜单的 item id
-    swipeXMap: {},         // { itemId: translateX } 动态偏移量
-    // === STEP 1.6 增强 II 修改结束 ===
-    chatList: []
+    swipeOpenId: "",
+    swipeXMap: {},
   },
 
   onLoad() {
-    this.setData({
-      ...getNavMetrics()
-    });
-    this._initMockLists();
-    this._loadRealFirstLists();
+    this.setData(getNavMetrics());
+    this.initMockLists();
+    this.loadRemoteLists();
   },
 
   onShow() {
     if (typeof this.getTabBar === "function" && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 });
     }
-    this._updateTabBarBadge();
-    this._loadRealFirstLists();
+    this.updateTabBarBadge();
+    this.loadRemoteLists();
   },
 
-  // === STEP 1.6 增强 修改开始：mock 数据初始化 + 置顶排序 ===
-  _initMockLists() {
-    const interactionList = interactionMessages.map((item) => ({
-      ...item,
-      isRead: false,
-      isPinned: false,
-    }));
+  initMockLists() {
     this.setData({
-      privateList: sortPinnedFirst(privateChatList),
-      groupList: sortPinnedFirst(groupChatList),
+      interactionList: interactionMessages.map((item) => ({
+        ...item,
+        isRead: !!item.isRead,
+        isPinned: !!item.isPinned,
+      })),
+      privateList: sortPinnedFirst(privateChatList.map(mapPrivateChatItem)),
       notificationList: systemNotifications.map(mapNotificationItem),
-      interactionList,
     });
   },
 
-  async _loadRealFirstLists() {
+  async loadRemoteLists() {
     try {
-      const [privateRes, groupRes, systemRes] = await Promise.all([
+      const [privateRes, systemRes] = await Promise.all([
         api.getChatList("private"),
-        api.getChatList("group"),
         api.getChatList("system"),
       ]);
+
       const nextData = {};
       const realPrivate = (privateRes.data || []).map(mapPrivateChatItem).filter((item) => item.chatId);
-      const realGroup = (groupRes.data || []).map(mapGroupChatItem).filter((item) => item.groupId);
       const realSystem = (systemRes.data || []).map(mapNotificationItem).filter((item) => item.id);
 
       if (realPrivate.length) {
         nextData.privateList = sortPinnedFirst(realPrivate);
-      }
-      if (realGroup.length) {
-        nextData.groupList = sortPinnedFirst(realGroup);
       }
       if (realSystem.length) {
         nextData.notificationList = realSystem;
       }
 
       if (Object.keys(nextData).length) {
-        this.setData(nextData, () => this._updateTabBarBadge());
-        return;
+        this.setData(nextData);
       }
-      this._updateTabBarBadge();
     } catch (error) {
-      console.warn("load real chat list failed", error);
-      this._updateTabBarBadge();
+      console.warn("loadRemoteLists failed", error);
+    } finally {
+      this.updateTabBarBadge();
     }
   },
 
-  _updateTabBarBadge() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      const privateUnread = this.data.privateList.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
-      const groupUnread = this.data.groupList.reduce((sum, g) => sum + (g.unreadCount || 0), 0);
-      const total = privateUnread + groupUnread;
-      this.getTabBar().setData({ "list[2].unreadCount": total });
-    }
-  },
-  // === STEP 1.6 增强 修改结束 ===
-
-  // === STEP 1.6 增强 II 修改开始：左滑手势处理 ===
-
-  // 获取当前 Tab 对应的列表名
-  _getListKey() {
-    const tab = this.data.activeTab;
-    const map = { private: "privateList", group: "groupList", interaction: "interactionList", system: "notificationList" };
-    return map[tab] || "";
-  },
-
-  // 获取当前 Tab 的按钮宽度
-  _getSwipeWidth() {
-    return this.data.activeTab === "system" ? SWIPE_W_2 : SWIPE_W_3;
-  },
-
-  // 关闭当前展开的左滑菜单
-  _closeSwipe() {
-    const openId = this.data.swipeOpenId;
-    if (!openId) return;
-    const mapKey = {};
-    mapKey[`swipeXMap.${openId}`] = 0;
-    this.setData({ swipeOpenId: "", ...mapKey });
-  },
-
-  _handleTouchStart(e) {
-    const itemId = e.currentTarget.dataset.id;
-    const touch = e.touches[0];
-    this._swipeState = { itemId, startX: touch.clientX, startY: touch.clientY, moved: false };
-  },
-
-  _handleTouchMove(e) {
-    if (!this._swipeState) return;
-    const touch = e.touches[0];
-    const dx = touch.clientX - this._swipeState.startX;
-    const dy = touch.clientY - this._swipeState.startY;
-
-    // 竖向滑动不处理
-    if (Math.abs(dy) > Math.abs(dx) && !this._swipeState.moved) return;
-    this._swipeState.moved = true;
-
-    // 阻止冒泡，防止页面滚动
-    if (Math.abs(dx) > 10) {
-      // 只阻止水平滑动时的页面滚动
-    }
-
-    const maxW = this._getSwipeWidth();
-    let x = dx;
-    // 限制范围
-    if (x > 0) x = 0;
-    if (x < -maxW) x = -maxW;
-
-    const mapKey = {};
-    mapKey[`swipeXMap.${this._swipeState.itemId}`] = x;
-    this.setData(mapKey);
-  },
-
-  _handleTouchEnd(e) {
-    if (!this._swipeState) return;
-    const state = this._swipeState;
-    this._swipeState = null;
-    if (!state.moved) {
-      // 没有真正移动，视为点击
-      this._closeSwipe();
+  updateTabBarBadge() {
+    if (typeof this.getTabBar !== "function" || !this.getTabBar()) {
       return;
     }
-
-    const openId = this.data.swipeOpenId;
-    const currentX = this.data.swipeXMap[state.itemId] || 0;
-    const maxW = this._getSwipeWidth();
-    const mapKey = {};
-
-    if (state.itemId === openId) {
-      // 当前展开项，如果滑回去就关闭
-      if (currentX > -maxW * 0.3) {
-        mapKey[`swipeXMap.${state.itemId}`] = 0;
-        mapKey.swipeOpenId = "";
-      }
-    } else {
-      // 新的项
-      if (Math.abs(currentX) > maxW * 0.3) {
-        // 先关闭旧的
-        if (openId) {
-          mapKey[`swipeXMap.${openId}`] = 0;
-        }
-        mapKey[`swipeXMap.${state.itemId}`] = -maxW;
-        mapKey.swipeOpenId = state.itemId;
-      } else {
-        mapKey[`swipeXMap.${state.itemId}`] = 0;
-      }
-    }
-    this.setData(mapKey);
+    const privateUnread = this.data.privateList.reduce((sum, item) => sum + (item.unreadCount || 0), 0);
+    this.getTabBar().setData({ "list[2].unreadCount": privateUnread });
   },
 
-  // 点击主内容区关闭左滑
-  _onSwipeContentTap(e) {
-    // 如果有展开的菜单，点击时先关闭
-    if (this.data.swipeOpenId) {
-      this._closeSwipe();
-      return;
-    }
-  },
-  // === STEP 1.6 增强 II 修改结束 ===
-
-  async loadChats() {
-    try {
-      const result = await api.getChatList(this.data.activeTab);
-      this.setData({
-        chatList: result.data
-      });
-    } catch (error) {
-      console.error("loadChats failed", error);
-      wx.showToast({ title: "会话加载失败", icon: "none" });
-    }
-  },
-
-  async handleTabChange(event) {
+  handleTabChange(event) {
     const nextTab = event.currentTarget.dataset.key;
-    if (nextTab === this.data.activeTab) {
+    if (!nextTab || nextTab === this.data.activeTab) {
       return;
     }
-    // === STEP 1.6 增强 II 修改开始：切换 Tab 时关闭左滑菜单 ===
-    this._closeSwipe();
-    // === STEP 1.6 增强 II 修改结束 ===
+    this.closeSwipe();
     this.setData({ activeTab: nextTab });
   },
 
-  openChat(event) {
-    const item = event.detail.item;
-    if (!item || !item.id) {
-      wx.showToast({ title: "会话信息异常", icon: "none" });
+  getListKey() {
+    const map = {
+      interaction: "interactionList",
+      private: "privateList",
+      system: "notificationList",
+    };
+    return map[this.data.activeTab] || "";
+  },
+
+  getSwipeWidth() {
+    return this.data.activeTab === "system" ? SWIPE_W_2 : SWIPE_W_3;
+  },
+
+  getItemId(item) {
+    return item.chatId || item.id || "";
+  },
+
+  isItemRead(item) {
+    if (this.data.activeTab === "private") {
+      return Number(item.unreadCount || 0) === 0;
+    }
+    return !!item.isRead;
+  },
+
+  closeSwipe() {
+    const openId = this.data.swipeOpenId;
+    if (!openId) {
       return;
     }
-
-    wx.navigateTo({
-      url: `/pages/chat-detail/chat-detail?chatId=${item.id}&title=${encodeURIComponent(item.name || "会话")}`
+    this.setData({
+      swipeOpenId: "",
+      [`swipeXMap.${openId}`]: 0,
     });
   },
 
-  // === STEP 1.6 修改开始：互动消息点击事件 ===
-  onInteractionTap(event) {
-    const targetTitle = event.currentTarget.dataset.title;
-    console.log("跳转到帖子", targetTitle);
+  onTouchStart(event) {
+    const itemId = event.currentTarget.dataset.id;
+    const touch = event.touches[0];
+    this._swipeState = {
+      itemId,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      moved: false,
+    };
   },
-  // === STEP 1.6 修改结束 ===
 
-  // === STEP 1.6 增强 修改开始：私聊点击 ===
+  onTouchMove(event) {
+    if (!this._swipeState) {
+      return;
+    }
+    const touch = event.touches[0];
+    const dx = touch.clientX - this._swipeState.startX;
+    const dy = touch.clientY - this._swipeState.startY;
+    if (Math.abs(dy) > Math.abs(dx) && !this._swipeState.moved) {
+      return;
+    }
+    this._swipeState.moved = true;
+    const maxW = this.getSwipeWidth();
+    let nextX = dx;
+    if (nextX > 0) {
+      nextX = 0;
+    }
+    if (nextX < -maxW) {
+      nextX = -maxW;
+    }
+    this.setData({ [`swipeXMap.${this._swipeState.itemId}`]: nextX });
+  },
+
+  onTouchEnd() {
+    if (!this._swipeState) {
+      return;
+    }
+    const state = this._swipeState;
+    this._swipeState = null;
+    if (!state.moved) {
+      this.closeSwipe();
+      return;
+    }
+
+    const itemId = state.itemId;
+    const currentX = this.data.swipeXMap[itemId] || 0;
+    const openId = this.data.swipeOpenId;
+    const maxW = this.getSwipeWidth();
+    const nextData = {};
+
+    if (Math.abs(currentX) > maxW * 0.3) {
+      if (openId && openId !== itemId) {
+        nextData[`swipeXMap.${openId}`] = 0;
+      }
+      nextData[`swipeXMap.${itemId}`] = -maxW;
+      nextData.swipeOpenId = itemId;
+    } else {
+      nextData[`swipeXMap.${itemId}`] = 0;
+      if (openId === itemId) {
+        nextData.swipeOpenId = "";
+      }
+    }
+
+    this.setData(nextData);
+  },
+
+  onInteractionTap(event) {
+    if (this.data.swipeOpenId) {
+      this.closeSwipe();
+      return;
+    }
+    const title = event.currentTarget.dataset.title || "";
+    if (title) {
+      wx.navigateTo({ url: `/pages/search/search?keyword=${encodeURIComponent(title)}` });
+    }
+  },
+
   onPrivateTap(event) {
+    if (this.data.swipeOpenId) {
+      this.closeSwipe();
+      return;
+    }
     const chatId = event.currentTarget.dataset.chatid;
     const title = event.currentTarget.dataset.name || "会话";
     if (!chatId) {
-      wx.showToast({ title: "会话信息异常", icon: "none" });
       return;
     }
     wx.navigateTo({
       url: `/pages/chat-detail/chat-detail?chatId=${chatId}&title=${encodeURIComponent(title)}`,
     });
   },
-  // === STEP 1.6 增强 修改结束 ===
 
-  // === STEP 1.6 增强 修改开始：群组点击 ===
-  onGroupTap(event) {
-    const groupId = event.currentTarget.dataset.groupid;
-    const title = event.currentTarget.dataset.name || "群聊";
-    if (!groupId) {
-      wx.showToast({ title: "群聊信息异常", icon: "none" });
+  onNotifTap(event) {
+    if (this.data.swipeOpenId) {
+      this.closeSwipe();
       return;
     }
-    wx.navigateTo({
-      url: `/pages/chat-detail/chat-detail?chatId=${groupId}&title=${encodeURIComponent(title)}`,
-    });
-  },
-  // === STEP 1.6 增强 修改结束 ===
-
-  // === STEP 1.6 增强 修改开始：通知点击标记已读 ===
-  onNotifTap(event) {
     const notifId = event.currentTarget.dataset.notifid;
     const list = this.data.notificationList;
-    const index = list.findIndex(n => n.id === notifId);
-    if (index === -1) return;
-    if (list[index].isRead) return;
-    const key = `notificationList[${index}].isRead`;
-    this.setData({ [key]: true });
-  },
-  // === STEP 1.6 增强 修改结束 ===
-
-  // === STEP 1.6 增强 II 修改开始：长按操作菜单 ===
-
-  _showActionSheet(itemId) {
-    const tab = this.data.activeTab;
-    const listKey = this._getListKey();
-    const list = this.data[listKey];
-    const item = list.find(i => this._getItemId(i) === itemId);
-    if (!item) return;
-
-    const isRead = this._isItemRead(item);
-    const isPinned = item.isPinned || false;
-    const hasPin = tab !== "system";
-
-    const itemList = [];
-    if (hasPin) {
-      itemList.push(isPinned ? "📌 取消置顶" : "📌 置顶");
+    const index = list.findIndex((item) => item.id === notifId);
+    if (index === -1) {
+      return;
     }
-    itemList.push(isRead ? "✉️ 标为未读" : "✉️ 标为已读");
-    itemList.push("🗑️ 删除");
-
-    const that = this;
-    wx.showActionSheet({
-      itemList: itemList,
-      itemColor: "#ffffff",
-      success(res) {
-        const tapIndex = res.tapIndex;
-        // 调整 tapIndex 以匹配功能
-        let actionIndex = tapIndex;
-        if (hasPin && actionIndex === 0) {
-          that._doTogglePin(itemId);
-        } else if ((!hasPin && actionIndex === 0) || (hasPin && actionIndex === 1)) {
-          if (isRead) {
-            that._doMarkUnread(itemId);
-          } else {
-            that._doMarkRead(itemId);
-          }
-        } else {
-          that._doDelete(itemId);
-        }
-      }
-    });
+    this.setData({ [`notificationList[${index}].isRead`]: true });
   },
 
   onLongPressItem(event) {
     const itemId = event.currentTarget.dataset.id;
-    this._closeSwipe();
-    this._showActionSheet(itemId);
-  },
-  // === STEP 1.6 增强 II 修改结束 ===
-
-  // === STEP 1.6 增强 II 修改开始：操作方法（左滑按钮 + 长按菜单复用） ===
-
-  _getItemId(item) {
-    return item.chatId || item.groupId || item.id || "";
-  },
-
-  _isItemRead(item) {
-    const tab = this.data.activeTab;
-    if (tab === "system") return item.isRead;
-    if (tab === "interaction") return item.isRead;
-    return (item.unreadCount || 0) === 0;
-  },
-
-  _doMarkRead(itemId) {
-    const tab = this.data.activeTab;
-    const listKey = this._getListKey();
-    const list = this.data[listKey];
-    const index = list.findIndex(i => this._getItemId(i) === itemId);
-    if (index === -1) return;
-
-    const mapKey = {};
-    if (tab === "system") {
-      mapKey[`${listKey}[${index}].isRead`] = true;
-    } else if (tab === "interaction") {
-      mapKey[`${listKey}[${index}].isRead`] = true;
-    } else {
-      mapKey[`${listKey}[${index}].unreadCount`] = 0;
+    if (!itemId) {
+      return;
     }
-    this.setData({ ...mapKey, swipeOpenId: "", [`swipeXMap.${itemId}`]: 0 });
-    this._updateTabBarBadge();
-    wx.showToast({ title: "已标为已读", icon: "none" });
+    this.closeSwipe();
+    this.showActionSheet(itemId);
   },
 
-  _doMarkUnread(itemId) {
-    const tab = this.data.activeTab;
-    const listKey = this._getListKey();
+  showActionSheet(itemId) {
+    const listKey = this.getListKey();
     const list = this.data[listKey];
-    const index = list.findIndex(i => this._getItemId(i) === itemId);
-    if (index === -1) return;
-
-    const mapKey = {};
-    if (tab === "system") {
-      mapKey[`${listKey}[${index}].isRead`] = false;
-    } else if (tab === "interaction") {
-      mapKey[`${listKey}[${index}].isRead`] = false;
-    } else {
-      mapKey[`${listKey}[${index}].unreadCount`] = 1;
+    const item = list.find((entry) => this.getItemId(entry) === itemId);
+    if (!item) {
+      return;
     }
-    this.setData({ ...mapKey, swipeOpenId: "", [`swipeXMap.${itemId}`]: 0 });
-    this._updateTabBarBadge();
-    wx.showToast({ title: "已标为未读", icon: "none" });
-  },
 
-  _doTogglePin(itemId) {
-    const listKey = this._getListKey();
-    const list = this.data[listKey];
-    const index = list.findIndex(i => this._getItemId(i) === itemId);
-    if (index === -1) return;
+    const actions = [];
+    if (this.data.activeTab !== "system") {
+      actions.push(item.isPinned ? "取消置顶" : "置顶");
+    }
+    actions.push(this.isItemRead(item) ? "标为未读" : "标为已读");
+    actions.push("删除");
 
-    const newPinned = !list[index].isPinned;
-    this.setData({ [`${listKey}[${index}].isPinned`]: newPinned });
-
-    // 重新排序：置顶在前
-    const tab = this.data.activeTab;
-    const sortKey = tab === "interaction" ? "interactionList" : (tab === "private" ? "privateList" : "groupList");
-    const sorted = [...this.data[sortKey]].sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-    this.setData({ [sortKey]: sorted, swipeOpenId: "", [`swipeXMap.${itemId}`]: 0 });
-    wx.showToast({ title: newPinned ? "已置顶" : "已取消置顶", icon: "none" });
-  },
-
-  _doDelete(itemId) {
-    const tab = this.data.activeTab;
-    const confirmText = tab === "system" ? "确定删除该通知？" : "确定删除该对话？";
-
-    wx.showModal({
-      title: "提示",
-      content: confirmText,
-      confirmColor: "#E84040",
-      success: (res) => {
-        if (!res.confirm) return;
-        const listKey = this._getListKey();
-        const list = this.data[listKey].filter(i => this._getItemId(i) !== itemId);
-        this.setData({
-          [listKey]: list,
-          swipeOpenId: "",
-          [`swipeXMap.${itemId}`]: 0,
-        });
-        this._updateTabBarBadge();
-        wx.showToast({ title: "已删除", icon: "none" });
-      }
+    wx.showActionSheet({
+      itemList: actions,
+      success: (result) => {
+        const tapIndex = result.tapIndex;
+        const hasPin = this.data.activeTab !== "system";
+        if (hasPin && tapIndex === 0) {
+          this.togglePin(itemId);
+          return;
+        }
+        if ((hasPin && tapIndex === 1) || (!hasPin && tapIndex === 0)) {
+          if (this.isItemRead(item)) {
+            this.markUnread(itemId);
+          } else {
+            this.markRead(itemId);
+          }
+          return;
+        }
+        this.deleteItem(itemId);
+      },
     });
   },
 
-  // 左滑按钮点击事件
+  markRead(itemId) {
+    const listKey = this.getListKey();
+    const list = this.data[listKey];
+    const index = list.findIndex((item) => this.getItemId(item) === itemId);
+    if (index === -1) {
+      return;
+    }
+    if (this.data.activeTab === "private") {
+      this.setData({ [`${listKey}[${index}].unreadCount`]: 0 });
+    } else {
+      this.setData({ [`${listKey}[${index}].isRead`]: true });
+    }
+    this.closeSwipe();
+    this.updateTabBarBadge();
+  },
+
+  markUnread(itemId) {
+    const listKey = this.getListKey();
+    const list = this.data[listKey];
+    const index = list.findIndex((item) => this.getItemId(item) === itemId);
+    if (index === -1) {
+      return;
+    }
+    if (this.data.activeTab === "private") {
+      this.setData({ [`${listKey}[${index}].unreadCount`]: 1 });
+    } else {
+      this.setData({ [`${listKey}[${index}].isRead`]: false });
+    }
+    this.closeSwipe();
+    this.updateTabBarBadge();
+  },
+
+  togglePin(itemId) {
+    const listKey = this.getListKey();
+    const list = this.data[listKey];
+    const nextList = sortPinnedFirst(
+      list.map((item) =>
+        this.getItemId(item) === itemId
+          ? { ...item, isPinned: !item.isPinned }
+          : item
+      )
+    );
+    this.setData({
+      [listKey]: nextList,
+      swipeOpenId: "",
+      [`swipeXMap.${itemId}`]: 0,
+    });
+  },
+
+  deleteItem(itemId) {
+    const listKey = this.getListKey();
+    this.setData({
+      [listKey]: this.data[listKey].filter((item) => this.getItemId(item) !== itemId),
+      swipeOpenId: "",
+      [`swipeXMap.${itemId}`]: 0,
+    });
+    this.updateTabBarBadge();
+  },
+
   onSwipeBtnTap(event) {
     const action = event.currentTarget.dataset.action;
     const itemId = event.currentTarget.dataset.id;
-    switch (action) {
-      case "read": {
-        const listKey = this._getListKey();
-        const list = this.data[listKey];
-        const item = list.find(i => this._getItemId(i) === itemId);
-        if (!item) return;
-        if (this._isItemRead(item)) {
-          this._doMarkUnread(itemId);
-        } else {
-          this._doMarkRead(itemId);
-        }
-        break;
+    if (!itemId) {
+      return;
+    }
+    if (action === "read") {
+      const list = this.data[this.getListKey()];
+      const item = list.find((entry) => this.getItemId(entry) === itemId);
+      if (!item) {
+        return;
       }
-      case "pin":
-        this._doTogglePin(itemId);
-        break;
-      case "delete":
-        this._doDelete(itemId);
-        break;
+      if (this.isItemRead(item)) {
+        this.markUnread(itemId);
+      } else {
+        this.markRead(itemId);
+      }
+      return;
+    }
+    if (action === "pin") {
+      this.togglePin(itemId);
+      return;
+    }
+    if (action === "delete") {
+      this.deleteItem(itemId);
     }
   },
-  // === STEP 1.6 增强 II 修改结束 ===
 });

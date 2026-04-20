@@ -13,10 +13,15 @@ Page({
     isAnonymous: true,
     canPublish: false,
     publishing: false,
+    contentType: "chat",
   },
 
-  async onLoad() {
+  async onLoad(options = {}) {
     this.setData({ ...getNavMetrics() });
+    const contentType = options.contentType === "article" || options.contentType === "qa"
+      ? options.contentType
+      : "chat";
+    this.setData({ contentType });
     await this.loadTopics();
   },
 
@@ -101,7 +106,7 @@ Page({
         topicId: this.data.selectedTopicId,
         topicName: this.data.selectedTopicName,
         content: this.data.content.trim(),
-        contentType: "chat",
+        contentType: this.data.contentType,
         isAnonymous: this.data.isAnonymous,
         tags: [],
       });

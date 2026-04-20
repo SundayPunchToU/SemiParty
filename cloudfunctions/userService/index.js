@@ -130,7 +130,6 @@ async function handleOnboarding(openid, event) {
   await db.collection("users").doc(user._id).update({ data: profileUpdate });
 
   // 批量加入专区
-  const joinedZones = [];
   if (Array.isArray(event.joinZoneIds) && event.joinZoneIds.length > 0) {
     for (const zoneId of event.joinZoneIds) {
       // 检查是否已加入
@@ -154,10 +153,6 @@ async function handleOnboarding(openid, event) {
       }
 
       // 获取专区信息
-      const zoneRes = await db.collection("zones").where({ zoneId }).limit(1).get();
-      if (zoneRes.data.length) {
-        joinedZones.push(zoneRes.data[0]);
-      }
     }
   }
 
@@ -167,7 +162,6 @@ async function handleOnboarding(openid, event) {
     success: true,
     data: {
       profile: profile.data,
-      joinedZones,
     },
   };
 }

@@ -9,6 +9,21 @@ const SEARCH_TABS = [
   { key: "talent", label: "人才" },
 ];
 
+function withSubtitle(item = {}) {
+  return {
+    ...item,
+    subtitle:
+      item.company ||
+      item.source ||
+      item.school ||
+      item.topicName ||
+      item.zoneName ||
+      (item.topic && item.topic.text) ||
+      item.targetRole ||
+      "",
+  };
+}
+
 Page({
   data: {
     statusBarHeight: 24,
@@ -23,16 +38,18 @@ Page({
   },
 
   onLoad(options) {
+    const keyword = options.keyword || "";
     this.setData({
       ...getNavMetrics(),
-      keyword: options.keyword || "",
+      keyword,
     });
+    if (keyword.trim()) {
+      this.handleSearch();
+    }
   },
 
   handleInput(event) {
-    this.setData({
-      keyword: event.detail.value,
-    });
+    this.setData({ keyword: event.detail.value });
   },
 
   async handleSearch() {
@@ -50,8 +67,14 @@ Page({
     try {
       const result = await api.search(keyword, this.data.activeType, 1);
       if (this.data.activeType === "all") {
+        const groupedResults = {
+          news: (result.data?.news || []).map(withSubtitle),
+          posts: (result.data?.posts || []).map(withSubtitle),
+          jobs: (result.data?.jobs || []).map(withSubtitle),
+          talents: (result.data?.talents || []).map(withSubtitle),
+        };
         this.setData({
-          groupedResults: result.data,
+          groupedResults,
           listResults: [],
           loading: false,
         });
@@ -60,7 +83,7 @@ Page({
 
       this.setData({
         groupedResults: null,
-        listResults: result.data || [],
+        listResults: (result.data || []).map(withSubtitle),
         loading: false,
       });
     } catch (error) {
@@ -75,7 +98,7 @@ Page({
 
   async handleTabChange(event) {
     const activeType = event.currentTarget.dataset.key;
-    if (activeType === this.data.activeType) {
+    if (!activeType || activeType === this.data.activeType) {
       return;
     }
 
@@ -88,29 +111,18 @@ Page({
   openResult(event) {
     const { type, id } = event.currentTarget.dataset;
     if (type === "news") {
-      wx.navigateTo({
-        url: `/pages/article-detail/article-detail?id=${id}`,
-      });
+      wx.navigateTo({ url: `/pages/article-detail/article-detail?id=${id}` });
       return;
     }
-
     if (type === "post") {
-      wx.navigateTo({
-        url: `/pages/post-detail/post-detail?id=${id}`,
-      });
+      wx.navigateTo({ url: `/pages/post-detail/post-detail?id=${id}` });
       return;
     }
-
     if (type === "job") {
-      wx.navigateTo({
-        url: `/pages/job-detail/job-detail?id=${id}`,
-      });
+      wx.navigateTo({ url: `/pages/job-detail/job-detail?id=${id}` });
       return;
     }
-
-    wx.navigateTo({
-      url: `/pages/talent-detail/talent-detail?id=${id}`,
-    });
+    wx.navigateTo({ url: `/pages/talent-detail/talent-detail?id=${id}` });
   },
 
   goBack() {

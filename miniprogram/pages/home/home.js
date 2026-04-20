@@ -1,241 +1,195 @@
 const api = require("../../utils/api");
-const mockData = require("../../utils/mock-data");
 const { homeTabs } = require("../../utils/constants");
-const { deepClone, getNavMetrics } = require("../../utils/util");
+const { getNavMetrics } = require("../../utils/util");
 
 Page({
   data: {
     statusBarHeight: 24,
     navBarHeight: 44,
-    brandName: "芯圈 SemiParty",
     tabs: homeTabs,
-    activeTab: "recommend",
-    quickNavList: [],
-    banner: null,
+    activeTab: "news",
     newsList: [],
-    page: 1,
-    hasMore: true,
-    loadingMore: false,
-    // === STEP 1.2 修改开始：新增数据字段 ===
-    swiperCurrent: 0,
-    teaRoomTopics: ["🔥热门", "#夜班日常", "#食堂测评", "#通勤吐槽", "#行业八卦", "#厂区生活"],
-    activeTeaRoomTopic: "🔥热门"
-    // === STEP 1.2 修改结束 ===
+    jobList: [],
+    companyList: [],
+    loading: false,
+    pageState: {
+      news: { page: 1, hasMore: true, loadingMore: false },
+      jobs: { page: 1, hasMore: true, loadingMore: false },
+      companies: { page: 1, hasMore: true, loadingMore: false },
+    },
   },
-
-  // === STEP 1.3 修改开始：公告条和运营横幅数据 ===
-  _initBannerList() {
-    return [
-      { id: "b1", bgColor: "#1E3A5F", text: "招聘季火热进行中" },
-      { id: "b2", bgColor: "#3E1A5F", text: "半导体行业峰会报名" },
-      { id: "b3", bgColor: "#1A5F3E", text: "芯社区新功能上线" }
-    ];
-  },
-
-  _initShortcutList() {
-    return [
-      { id: "s1", icon: "🔥", label: "热门招聘" },
-      { id: "s2", icon: "📚", label: "知识库" },
-      { id: "s3", icon: "📦", label: "供需大厅" },
-      { id: "s4", icon: "🎓", label: "校招专区" },
-      { id: "s5", icon: "🏢", label: "企业主页" }
-    ];
-  },
-  // === STEP 1.3 修改结束 ===
 
   onLoad() {
-    const metrics = getNavMetrics();
-    this.setData({
-      ...metrics,
-      // === STEP 1.3 修改开始：初始化轮播和快捷入口数据 ===
-      bannerList: this._initBannerList(),
-      shortcutList: this._initShortcutList(),
-      showNotice: true
-      // === STEP 1.3 修改结束 ===
-    });
-    this.loadNews(true);
+    this.setData(getNavMetrics());
+    this.loadActiveTab(true);
   },
 
-  // === STEP 1.1 修改开始：同步自定义 TabBar 选中状态 ===
   onShow() {
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+    if (typeof this.getTabBar === "function" && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 });
-    }
-  },
-  // === STEP 1.1 修改结束 ===
-
-  async loadNews(reset = false) {
-    try {
-      const nextPage = reset ? 1 : this.data.page;
-      const result = await api.getNewsList(this.data.activeTab, nextPage);
-      const newsList = reset
-        ? result.data
-        : this.data.newsList.concat(result.data);
-
-      this.setData({
-        newsList,
-        page: nextPage + 1,
-        hasMore: result.hasMore,
-        loadingMore: false
-      });
-    } catch (error) {
-      console.error("loadNews failed", error);
-      this.setData({ loadingMore: false });
-      wx.showToast({ title: "资讯加载失败", icon: "none" });
     }
   },
 
   async onPullDownRefresh() {
-    await this.loadNews(true);
+    await this.loadActiveTab(true);
     wx.stopPullDownRefresh();
   },
 
   async onReachBottom() {
-    if (!this.data.hasMore || this.data.loadingMore) {
+    const key = this.data.activeTab;
+    const state = this.data.pageState[key];
+    if (!state || !state.hasMore || state.loadingMore || this.data.loading) {
       return;
     }
-
-    this.setData({ loadingMore: true });
-    await this.loadNews();
+    this.setData({ [`pageState.${key}.loadingMore`]: true });
+    await this.loadActiveTab(false);
   },
 
-  handleSearch() {
+  onSearchTap() {
     wx.navigateTo({ url: "/pages/search/search" });
   },
 
-
-  // === STEP 1.2 修改开始：Tab 切换联动 Swiper ===
-  async handleTabChange(event) {
+  async onTabTap(event) {
     const nextTab = event.currentTarget.dataset.key;
-    if (nextTab === this.data.activeTab) {
+    if (!nextTab || nextTab === this.data.activeTab) {
       return;
     }
-
-    const indexMap = { recommend: 0, industry: 1, knowledge: 2, company: 3 };
-    const swiperIdx = indexMap[nextTab] !== undefined ? indexMap[nextTab] : 0;
-
-    this.setData({
-      activeTab: nextTab,
-      swiperCurrent: swiperIdx
-    });
-
-    // 仅推荐和资讯 Tab 加载新闻数据
-    if (nextTab === 'recommend' || nextTab === 'industry') {
-      this.setData({
-        newsList: [],
-        page: 1,
-        hasMore: true
-      });
-      await this.loadNews(true);
-    } else {
-      this.setData({ newsList: [] });
+    this.setData({ activeTab: nextTab });
+    const listKey = this.getListKey(nextTab);
+    if (!this.data[listKey].length) {
+      await this.loadActiveTab(true);
     }
   },
-  // === STEP 1.2 修改结束 ===
 
-  openJobMarket() {
-    wx.navigateTo({ url: "/pages/job-market/job-market" });
+  getListKey(tabKey) {
+    return tabKey === "jobs" ? "jobList" : tabKey === "companies" ? "companyList" : "newsList";
+  },
+
+  async loadActiveTab(reset = false) {
+    const tabKey = this.data.activeTab;
+    if (tabKey === "jobs") {
+      await this.loadJobs(reset);
+      return;
+    }
+    if (tabKey === "companies") {
+      await this.loadCompanies(reset);
+      return;
+    }
+    await this.loadNews(reset);
+  },
+
+  async loadNews(reset = false) {
+    const page = reset ? 1 : this.data.pageState.news.page;
+    this.setData({ loading: reset });
+    try {
+      const result = await api.getNewsList("recommend", page);
+      const newsList = reset ? (result.data || []) : this.data.newsList.concat(result.data || []);
+      this.setData({
+        newsList,
+        loading: false,
+        "pageState.news.page": page + 1,
+        "pageState.news.hasMore": !!result.hasMore,
+        "pageState.news.loadingMore": false,
+      });
+    } catch (error) {
+      console.error("loadNews failed", error);
+      this.setData({
+        loading: false,
+        "pageState.news.loadingMore": false,
+      });
+      wx.showToast({ title: "资讯加载失败", icon: "none" });
+    }
+  },
+
+  async loadJobs(reset = false) {
+    const page = reset ? 1 : this.data.pageState.jobs.page;
+    this.setData({ loading: reset });
+    try {
+      const result = await api.getJobList({ category: "all", page, pageSize: 10 });
+      const jobList = reset ? (result.data || []) : this.data.jobList.concat(result.data || []);
+      this.setData({
+        jobList,
+        loading: false,
+        "pageState.jobs.page": page + 1,
+        "pageState.jobs.hasMore": !!result.hasMore,
+        "pageState.jobs.loadingMore": false,
+      });
+    } catch (error) {
+      console.error("loadJobs failed", error);
+      this.setData({
+        loading: false,
+        "pageState.jobs.loadingMore": false,
+      });
+      wx.showToast({ title: "岗位加载失败", icon: "none" });
+    }
+  },
+
+  async loadCompanies(reset = false) {
+    const page = reset ? 1 : this.data.pageState.companies.page;
+    this.setData({ loading: reset });
+    try {
+      const result = await api.getCompanyList({ page, size: 10 });
+      const companyList = reset
+        ? (result.data || [])
+        : this.data.companyList.concat(result.data || []);
+      this.setData({
+        companyList,
+        loading: false,
+        "pageState.companies.page": page + 1,
+        "pageState.companies.hasMore": !!result.hasMore,
+        "pageState.companies.loadingMore": false,
+      });
+    } catch (error) {
+      console.error("loadCompanies failed", error);
+      this.setData({
+        loading: false,
+        "pageState.companies.loadingMore": false,
+      });
+      wx.showToast({ title: "企业加载失败", icon: "none" });
+    }
   },
 
   openArticle(event) {
+    const id = event.detail.id;
+    if (!id) {
+      return;
+    }
+    wx.navigateTo({ url: `/pages/article-detail/article-detail?id=${id}` });
+  },
+
+  openJobDetail(event) {
+    const id = event.detail.id;
+    if (!id) {
+      return;
+    }
+    wx.navigateTo({ url: `/pages/job-detail/job-detail?id=${id}` });
+  },
+
+  openCompany(event) {
+    const company = event.currentTarget.dataset.company;
+    if (!company) {
+      return;
+    }
     wx.navigateTo({
-      url: `/pages/article-detail/article-detail?id=${event.detail.id}`
+      url: `/pages/job-market/job-market?company=${encodeURIComponent(company)}`,
     });
   },
 
-  // === STEP 1.2 修改开始：Swiper 切换处理 ===
-  onSwiperChange(event) {
-    const current = event.detail.current;
-    const indexToTab = ['recommend', 'industry', 'knowledge', 'company'];
-    const nextTab = indexToTab[current];
-    if (nextTab === this.data.activeTab) {
+  async onApplyJob(event) {
+    const jobId = event.detail.id;
+    if (!jobId) {
       return;
     }
-
-    this.setData({
-      swiperCurrent: current,
-      activeTab: nextTab
-    });
-
-    if (nextTab === 'recommend' || nextTab === 'industry') {
-      this.setData({
-        newsList: [],
-        page: 1,
-        hasMore: true
+    try {
+      await api.login();
+      const result = await api.applyJob(jobId);
+      wx.showToast({
+        title: result.duplicated ? "已投递" : "投递成功",
+        icon: "none",
       });
-      this.loadNews(true);
-    } else {
-      this.setData({ newsList: [] });
+    } catch (error) {
+      console.error("applyJob failed", error);
+      wx.showToast({ title: error.message || "投递失败", icon: "none" });
     }
   },
-
-  goToCommunity() {
-    wx.switchTab({ url: '/pages/community/community' });
-  },
-
-  onTopicTap(event) {
-    const topic = event.currentTarget.dataset.topic;
-    this.setData({ activeTeaRoomTopic: topic });
-  },
-
-  goToTeaRoom() {
-    wx.navigateTo({ url: "/pages/tea-room/tea-room" });
-  },
-
-  onTeaRoomFabTap() {
-    wx.navigateTo({ url: "/pages/post-create/post-create?zoneId=tea-room&isAnonymous=true" });
-  },
-
-  // === STEP 1.3 修改开始：公告条和运营横幅事件 ===
-  closeNotice() {
-    this.setData({ showNotice: false });
-  },
-
-  onNoticeTap() {
-    wx.switchTab({ url: '/pages/community/community' });
-  },
-
-  onBannerChange(event) {
-    this.setData({ bannerCurrent: event.detail.current });
-  },
-
-  onBannerTap(event) {
-    const id = event.currentTarget.dataset.id;
-    if (id === 'b1') {
-      wx.navigateTo({ url: '/pages/job-market/job-market' });
-      return;
-    }
-    if (id === 'b2') {
-      wx.navigateTo({ url: '/pages/search/search?keyword=行业峰会' });
-      return;
-    }
-    wx.switchTab({ url: '/pages/community/community' });
-  },
-
-  onShortcutTap(event) {
-    const label = event.currentTarget.dataset.label;
-    const routeMap = {
-      热门招聘: '/pages/job-market/job-market',
-      校招专区: '/pages/job-market/job-market',
-      企业主页: '/pages/community/community'
-    };
-    const searchMap = {
-      知识库: '知识',
-      供需大厅: '供应链'
-    };
-
-    if (routeMap[label]) {
-      if (routeMap[label].includes('/pages/community/community')) {
-        wx.switchTab({ url: routeMap[label] });
-      } else {
-        wx.navigateTo({ url: routeMap[label] });
-      }
-      return;
-    }
-
-    if (searchMap[label]) {
-      wx.navigateTo({ url: `/pages/search/search?keyword=${searchMap[label]}` });
-    }
-  }
-  // === STEP 1.3 修改结束 ===
 });

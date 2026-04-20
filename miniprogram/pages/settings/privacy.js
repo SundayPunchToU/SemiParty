@@ -3,6 +3,7 @@ const { getNavMetrics } = require("../../utils/util");
 Page({
   data: {
     statusBarHeight: 24,
+    navCapsuleInsetRight: 12,
     items: {
       allowStrangerMsg: true,
       showOnline: true,
@@ -19,14 +20,12 @@ Page({
   onToggle(e) {
     const key = e.currentTarget.dataset.key;
     const value = e.detail.value;
-    // TODO: POST /api/user/settings { key, value }
-    console.log("隐私设置变更", key, value);
+    console.log("privacy setting changed", key, value);
     this.setData({ [`items.${key}`]: value });
   },
 
   goBlockList() {
-    console.log("跳转黑名单管理");
-    wx.showToast({ title: "待接入", icon: "none" });
+    wx.showToast({ title: "暂未开放", icon: "none" });
   },
 
   goBack() {
